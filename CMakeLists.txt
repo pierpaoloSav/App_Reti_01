@@ -35,6 +35,8 @@ add_executable(${PROJECT_NAME} App/main.cpp
     App/Application.cpp
     App/functions.h
     App/functions.cpp
+    App/features.h
+    App/features.cpp
 )
 
 # Link raylib to project

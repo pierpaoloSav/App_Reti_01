@@ -1,7 +1,5 @@
 #include "Button.h"
 
-#include <iostream>
-
 Button::Button(float posX, float posY, int width, int height, const char* title, int fontSize) :
     m_title(title),
     m_fontSize(fontSize),

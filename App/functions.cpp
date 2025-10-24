@@ -1,8 +1,5 @@
 #include "functions.h"
 
-#include <iostream>
-#include <stdlib.h>
-
 bool inputIpValid(char *ip)
 {
     char octet[5] = "";
@@ -45,4 +42,92 @@ bool inputIpValid(char *ip)
         return false;
 
     return true;
+}
+
+bool isAnIp(char *ip)
+{
+    //THE ADDRES HAS TO BE VALID
+
+    //get first octet num
+    char octet[4];
+    for (int i = 0; ip[i] != '.'; i++)
+        octet[i] = ip[i];
+    
+    //ip can't be of class d/e
+    if (atoi(octet) < 224)
+        return true;
+    else
+        return false;
+}
+
+bool isSubnetMask(char *sm)
+{
+    //THE ADDRES HAS TO BE VALID
+
+    //get binary sm
+    uint8_t ip[4];
+    bool ipB[32];
+    convertIp(sm, ip);
+    convertIpBinary(ip, ipB);
+
+    //verify it has only 1 on the left and 0 right
+    bool host = false;
+    for (int i = 0; i < 32; i++)
+    {
+        if (!host and !ipB[i])
+            host = true;
+
+        if (host and ipB[i])
+            return false;
+    }
+    
+    return true;
+}
+
+void convertIp(char *ipS, uint8_t ip[4])
+{
+    //THE ADDRES HAS TO BE VALID
+
+    char octet[5] = "";
+    int t = 0;
+    int d = 0;
+
+    for (int i = 0; i < strlen(ipS)+1; i++)
+    {
+        if (ipS[i] == '.' || ipS[i] == '\0')
+        {
+            //get octet num and append
+            int n = atoi(octet);
+            ip[d] = n;
+            d++;
+
+            //reset octet
+            t=0;
+            octet[0] = '\0';
+            continue;
+        }
+
+        //octet update
+        octet[t] = ipS[i];
+        t++;
+        octet[t] = '\0';
+    }
+}
+
+void convertIpBinary(uint8_t ip[4], bool ipB[32])
+{
+    //THE ADDRES HAS TO BE VALID
+
+    //conversion with module method
+    int k = 3;
+    for (int i = 0; i < 4; i++)
+    {
+        int n = ip[i];
+        for (int j = 0; j < 8; j++)
+        {
+            ipB[32-(k*8)-j-1] = n%2;
+            n /= 2;
+        }
+        k--;
+    }
 }

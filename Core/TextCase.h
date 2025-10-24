@@ -3,6 +3,8 @@
 #include <raylib.h>
 #include <string>
 #include <unordered_set>
+#include <iostream>
+#include <string.h>
 
 class TextCase
 {

@@ -1,5 +1,3 @@
-#include <raylib.h>
-
 #include "Application.h"
 
 int main()
@@ -9,6 +7,3 @@ int main()
     Application app(720, 480, Title);
     app.run();
 }
-
-//TODO: click sui button e sulle textcase migliorabile
-//TODO: spacing delle textcase migliorabile

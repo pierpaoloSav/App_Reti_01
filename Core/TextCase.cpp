@@ -1,5 +1,4 @@
 #include "TextCase.h"
-#include <iostream>
 
 TextCase::TextCase(float posX, float posY, int width, int height, int fontSize, int max) :
     m_title(nullptr),

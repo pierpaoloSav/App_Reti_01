@@ -1,8 +1,16 @@
 #pragma once
 
+//?
+#include <inttypes.h>
+#include <iostream>
+#include <string>
+#include <unordered_set>
+
 #include "Window.h"
 #include "TextCase.h"
 #include "Button.h"
+#include "functions.h"
+#include "features.h"
 
 class Application
 {
@@ -19,8 +27,12 @@ private:
     void InitIpCase();
     void InitIpCase1();
     void InitSmCase();
+    void InitNSubnetCase();
+    void InitSubnetToView();
+    void InitNHostCase();
 
     void SelectMod();
+    bool Processing();
 
 private:
     Window window;
@@ -28,6 +40,9 @@ private:
     TextCase *ipCase;
     TextCase *ipCase1;
     TextCase *smCase;
+    TextCase *nSubnetCase;
+    TextCase *subnetToView;
+    TextCase *nHostCase;
 
     uint8_t nMod;
     Button plus;
