@@ -32,7 +32,8 @@ private:
     void InitNHostCase();
 
     void SelectMod();
-    bool Processing();
+    void Processing();
+    void Output();
 
 private:
     Window window;
@@ -49,4 +50,7 @@ private:
     Button minus;
 
     Button calculate;
+
+    bool inputError;
+    std::string outputS;
 };

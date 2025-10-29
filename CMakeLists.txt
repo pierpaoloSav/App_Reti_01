@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.14)
 
 project(APP_RETI_01_4INA_Saverione_Pierpaolo)
 
+#Static link some c++ libraries on windows
+if(WIN32)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++ -static")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -lpthread")
+endif()
+
 # Try to find a locally installed raylib, but don't quit on fail
 find_package(raylib 5.5 QUIET)
 

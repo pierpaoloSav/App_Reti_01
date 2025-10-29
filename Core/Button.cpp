@@ -14,25 +14,29 @@ Button::Button(float posX, float posY, int width, int height, const char* title,
 
 bool Button::pressed()
 {
-    if (IsMouseButtonDown(0))
+    //get values
+    int x = GetMouseX();
+    int y = GetMouseY();
+    static bool inside = false;
+    inside = (x > m_case.x && x < m_case.x + m_case.width 
+                && y > m_case.y && y < m_case.y + m_case.height);
+
+    //mouse pressed
+    if (IsMouseButtonPressed(0))
     {
-        int x = GetMouseX();
-        int y = GetMouseY();
-        if (x > m_case.x && x < m_case.x + m_case.width && 
-            y > m_case.y && y < m_case.y + m_case.height)
-        {
-            m_down = true;
-        }
-        else
-        {
-            m_down = false;
-        }
+        m_down = inside;
     }
-    
-    if (m_down && IsMouseButtonUp(0))
+
+    //if mouse has been pressed but is no longer inside the button
+    if (!inside)
+        m_down = false;
+
+    //mouse released
+    if (IsMouseButtonReleased(0) && m_down)
     {
         m_down = false;
-        return true;
+
+        return inside;
     }
 
     return false;

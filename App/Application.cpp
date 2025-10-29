@@ -17,7 +17,10 @@ Application::Application(int screenWidth, int screenHeight, const char* title) :
     plus(570, 110, 20, 20, "+", 10),
     minus(630, 110, 20, 20, "-", 10),
 
-    calculate(50, 240, 100, 20, "CALCULATE", 15)
+    calculate(50, 240, 100, 20, "CALCULATE", 15),
+
+    inputError(false),
+    outputS("")
 {
     this->SelectMod();
 }
@@ -43,44 +46,50 @@ Application::~Application()
 
 void Application::InitIpCase()
 {
-    ipCase = new TextCase(50, 50, 280, 30, 30, 15);
+    ipCase = new TextCase(50, 50, 280, 30, 15);
     ipCase->setTitle("IP 1");
-    ipCase->setValid({'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'});
+    std::unordered_set<char> valid = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'};
+    ipCase->setValid(valid);
 }
 
 void Application::InitIpCase1()
 {
-    ipCase1 = new TextCase(50, 110, 280, 30, 30, 15);
+    ipCase1 = new TextCase(50, 110, 280, 30, 15);
     ipCase1->setTitle("IP 2");
-    ipCase1->setValid({'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'});
+    std::unordered_set<char> valid = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'};
+    ipCase1->setValid(valid);
 }
 
 void Application::InitSmCase()
 {
-    smCase = new TextCase(50, 170, 280, 30, 30, 15);
+    smCase = new TextCase(50, 170, 280, 30, 15);
     smCase->setTitle("Subnet Mask");
-    smCase->setValid({'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'});
+    std::unordered_set<char> valid = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'};
+    smCase->setValid(valid);
 }
 
 void Application::InitNSubnetCase()
 {
-    nSubnetCase = new TextCase(50, 110, 280, 30, 30, 7);
+    nSubnetCase = new TextCase(50, 110, 280, 30, 7);
     nSubnetCase->setTitle("Numero di Sottoreti");
-    nSubnetCase->setValid({'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'});
+    std::unordered_set<char> valid = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+    nSubnetCase->setValid(valid);
 }
 
 void Application::InitSubnetToView()
 {
-    subnetToView = new TextCase(50, 170, 280, 30, 30, 7);
+    subnetToView = new TextCase(50, 170, 280, 30, 7);
     subnetToView->setTitle("Sottorete da visualizzare");
-    subnetToView->setValid({'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'});
+    std::unordered_set<char> valid = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+    subnetToView->setValid(valid);
 }
 
 void Application::InitNHostCase()
 {
-    nHostCase = new TextCase(50, 170, 280, 30, 30, 7);
-    nHostCase->setTitle("Sottorete da visualizzare");
-    nHostCase->setValid({'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'});
+    nHostCase = new TextCase(50, 170, 280, 30, 7);
+    nHostCase->setTitle("Numero di Host");
+    std::unordered_set<char> valid = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+    nHostCase->setValid(valid);
 }
 
 void Application::run()
@@ -90,6 +99,82 @@ void Application::run()
         this->Loop();
         this->Render();
     }
+}
+
+void Application::Loop()
+{
+    //--------INPUTS--------//
+    if(ipCase)
+        ipCase->event();
+    if(ipCase1)
+        ipCase1->event();
+    if(smCase)
+        smCase->event();
+    if(nSubnetCase)
+        nSubnetCase->event();
+    if(subnetToView)
+        subnetToView->event();
+    if(nHostCase)
+        nHostCase->event();
+    bool b_plus = plus.pressed();
+    bool b_minus = minus.pressed();
+    bool b_calculate = calculate.pressed();
+
+    //SELECTOR//
+    if (b_plus && nMod < 4)
+    {
+        nMod++;
+        this->SelectMod();
+    }
+    if (b_minus && nMod > 1)
+    {
+        nMod--;
+        this->SelectMod();
+    }
+        
+    //--------PROCESSING--------//
+    if (b_calculate)
+    {
+        this->Processing();
+    }
+}
+
+void Application::Render()
+{
+    BeginDrawing();
+
+        ClearBackground(WHITE);
+
+        //textcases render
+        if(ipCase)
+            ipCase->render();
+        if(ipCase1)
+            ipCase1->render();
+        if(smCase)
+            smCase->render();
+        if(nSubnetCase)
+            nSubnetCase->render();
+        if(subnetToView)
+            subnetToView->render();
+        if(nHostCase)
+            nHostCase->render();
+
+        //selector render 
+            //title render
+            DrawText("Selezionare\nModalità", 520, 30, 30, BLACK);
+            //value render
+            std::string buff = std::to_string(nMod);
+            DrawText(buff.c_str(), 610-(MeasureText(buff.c_str(), 20)/2), 110, 20, BLACK);
+            //buttons render
+            plus.render();
+            minus.render();
+                
+        calculate.render();
+
+        //--------OUTPUT--------//
+        Output();
+
+    EndDrawing();
 }
 
 void Application::SelectMod()
@@ -151,33 +236,45 @@ void Application::SelectMod()
         std::cout << "ERROR: wrong mod value" << "\n";
         break;
     }
+
+    //clear output
+    outputS = "";
 }
 
-bool Application::Processing()
+void Application::Processing()
 {
     //collect the data and check it
     char ipS[16] = "";
     if (ipCase)
     {
         ipCase->getText(ipS);
+        ipCase->clearText();
         if (!inputIpValid(ipS) || !isAnIp(ipS))
-            return false;
+            inputError = true;
+        else
+            inputError = false;
     }
         
     char ip1S[16] = "";
     if(ipCase1)
     {
         ipCase1->getText(ip1S);
+        ipCase1->clearText();
         if (!inputIpValid(ip1S) || !isAnIp(ip1S))
-            return false;
+            inputError = true;
+        else
+            inputError = false;
     }
 
     char smS[16];
     if(smCase)
     {
         smCase->getText(smS);
+        smCase->clearText();
         if (!inputIpValid(smS) || !isSubnetMask(smS))
-            return false;
+            inputError = true;
+        else
+            inputError = false;
     }
 
     //process the data
@@ -185,19 +282,34 @@ bool Application::Processing()
     {
     case 1:
     {
+        //error output
+        if(inputError)
+        {
+            outputS = "Uno o più indirizzi non validi";
+            return;
+        }
+
         u_int8_t ip[4];
         convertIp(ipS, ip);
 
-        std::cout << "Classe: " << findClass(ip) << "\n";
+        outputS = "Classe: ";
+        outputS += findClass(ip);
         if (isPrivate(ip))
-            std::cout << "Indirizzo privato\n";
+            outputS += "\nIndirizzo privato";
         else
-            std::cout << "Indirizzo pubblico\n";
+            outputS += "\nIndirizzo pubblico";
 
         break;
     }
     case 2:
     {    
+        //error output
+        if(inputError)
+        {
+            outputS = "Uno o più indirizzi non validi";
+            return;
+        }
+
         u_int8_t ip[4];
         convertIp(ipS, ip);
 
@@ -208,9 +320,9 @@ bool Application::Processing()
         convertIp(smS, sm);
         
         if (sameNet(ip, ip1, sm))
-            std::cout << "Appartengono alla stessa rete\n";
+            outputS = "Appartengono alla\n stessa rete";
         else
-            std::cout << "Non appartengono alla stessa rete\n";
+            outputS = "Non appartengono alla\n stessa rete";
 
         break;
     }
@@ -224,82 +336,50 @@ bool Application::Processing()
         std::cout << "ERROR: wrong mod value" << "\n";
         break;
     }
-
-    return true;
 }
 
-void Application::Loop()
+void Application::Output()
 {
-    //--------INPUTS--------//
-    if(ipCase)
-        ipCase->event();
-    if(ipCase1)
-        ipCase1->event();
-    if(smCase)
-        smCase->event();
-    if(nSubnetCase)
-        nSubnetCase->event();
-    if(subnetToView)
-        subnetToView->event();
-    if(nHostCase)
-        nHostCase->event();
-    bool b_plus = plus.pressed();
-    bool b_minus = minus.pressed();
-    bool b_calculate = calculate.pressed();
-
-    //SELECTOR//
-    if (b_plus && nMod < 4)
+    switch (nMod)
     {
-        nMod++;
-        this->SelectMod();
+        case 1:
+        {
+            Color color = BLACK;
+            if (inputError)
+                color = RED;
+
+            const char* text = outputS.c_str();
+            int textWidth = MeasureText(text, 50);
+            DrawText(text, 360-(textWidth/2), 360-(50/2), 50, color);
+
+            break;
+        }
+        case 2:
+        {
+            Color color = BLACK;
+            if (inputError)
+                color = RED;
+
+            const char* text = outputS.c_str();
+            int textWidth = MeasureText(text, 50);
+            DrawText(text, 360-(textWidth/2), 360-(50/2), 50, color);
+            
+            break;
+        }
+        case 3:
+        {
+            
+            break;
+        }
+        case 4:
+        {
+           
+            break;
+        }
+        default:
+        {
+            std::cout << "ERROR: wrong mod value" << "\n";
+            break;
+        }
     }
-    if (b_minus && nMod > 1)
-    {
-        nMod--;
-        this->SelectMod();
-    }
-        
-    //--------PROCESSING--------//
-    if (b_calculate)
-    {
-        if (!this->Processing())
-            std::cout << "Uno o più indirizzi non sono validi\n";
-    }
-
-    //--------OUTPUT--------//
-}
-
-void Application::Render()
-{
-    BeginDrawing();
-
-        ClearBackground(WHITE);
-
-        //textcases render
-        if(ipCase)
-            ipCase->render();
-        if(ipCase1)
-            ipCase1->render();
-        if(smCase)
-            smCase->render();
-        if(nSubnetCase)
-            nSubnetCase->render();
-        if(subnetToView)
-            subnetToView->render();
-        if(nHostCase)
-            nHostCase->render();
-
-        //selector render 
-            //title render
-            DrawText("Selezionare\nModalità", 520, 30, 30, BLACK);
-            //value render
-            std::string buff = std::to_string(nMod);
-            DrawText(buff.c_str(), 610-(MeasureText(buff.c_str(), 20)/2), 110, 20, BLACK);
-            //buttons render
-            plus.render();
-            minus.render();
-
-        calculate.render();
-
-    EndDrawing();
 }
