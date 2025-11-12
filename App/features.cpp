@@ -1,32 +1,45 @@
 #include "features.h"
 
-char findClass(u_int8_t ip[4])
+char findClass(bool ip[32])
 {
-    if (ip[0] < 128)
-        return 'a';
-    else if(ip[0] < 192)
-        return 'b';
-    else if(ip[0] < 224)
-        return 'c';
-    else //error
-        return 'd';
+    char result = 'a';
+
+    for (int i = 0; ip[i] == 1 and result != 'e'; i++)
+        result++;
+
+    return result;
 }
 
-bool isPrivate(u_int8_t ip[4])
+bool isPrivate(bool ip[32])
 {
     char ipClass = findClass(ip);
+    //convert first two octects
+    int n = 0;
+    int k = 0;
+    int j = 0;
+    for (int i = 7; i >= 0; i--)
+    {
+        n += ip[i] * pow(2, j);
+        j++;
+    }
+    j=0;
+    for (int i = 15; i >= 8; i--)
+    {
+        k += ip[i] * pow(2, j);
+        j++;
+    }
 
     switch (ipClass)
     {
     case 'a':
-        if (ip[0] == 10)
+        if (n == 10)
             return true;
         break;
     case 'b':
-        if (ip[0] == 172 && ip[1] >= 16 && ip[1] <= 31)
+        if (n == 172 && k >= 16 && k <= 31)
             return true;
     case 'c':
-        if (ip[0] == 192 && ip[1] == 168)
+        if (n == 192 && k == 168)
             return true;
     default:
         return false;
@@ -36,22 +49,41 @@ bool isPrivate(u_int8_t ip[4])
     return false;
 }
 
-bool sameNet(u_int8_t ip[4], u_int8_t ip1[4], u_int8_t sm[4])
+bool sameNet(bool ip[32], bool ip1[32], bool sm[32])
+{   
+    for (int i = 0; i < 32; i++)
+        if ((ip[i] && sm[i]) != (ip1[i] && sm[i]))
+            return false;
+
+    return true;
+}
+
+bool subnetting(bool ip[32], int nSubnets, net* table)
 {
-    for (int i = 0; i < 4; i++)
+    //calculate some vars
+    const int nBit = ceil(log2(nSubnets));
+    int s = ((int)findClass(ip)-96) * 8;
+    int e = s+nBit -1;
+    if (e > 29)
+        return false;
+
+    for (int i = 0; i < nSubnets; i++)
     {
-        bool ipB[32];
-        convertIpBinary(ip, ipB);
+        bool subId[nBit];
+        bool netId[32];
+        memcpy(netId, ip, sizeof(bool)*32);
 
-        bool ip1B[32];
-        convertIpBinary(ip1, ip1B);
-
-        bool smB[32];
-        convertIpBinary(sm, smB);
+        //get the subnet part and copy it in the netId
+        int temp = i;
+        for (int j = nBit-1; j >= 0; j--)
+        {
+            subId[j] = temp%2;
+            temp /= 2;
+        }
+        memcpy(netId+s, subId, sizeof(bool)*nBit);
         
-        for (int i = 0; i < 32; i++)
-            if ((ipB[i] && smB[i]) != (ip1B[i] && smB[i]))
-                return false;
+        //add in the table
+        table[i].create(netId);
     }
 
     return true;

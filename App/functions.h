@@ -10,6 +10,6 @@ bool isAnIp(char *ip);
 
 bool isSubnetMask(char *sm);
 
-void convertIp(char *ipS, uint8_t ip[4]);
+void convertIp(char *ipS, bool ip[32]);
 
-void convertIpBinary(uint8_t ip[4], bool ipB[32]);
+void convertIpString(bool ip[32], char *ipS);

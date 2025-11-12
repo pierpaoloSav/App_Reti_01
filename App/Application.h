@@ -53,4 +53,5 @@ private:
 
     bool inputError;
     std::string outputS;
+    net outputTable[6];
 };

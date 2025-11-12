@@ -65,30 +65,30 @@ bool isSubnetMask(char *sm)
     //THE ADDRES HAS TO BE VALID
 
     //get binary sm
-    uint8_t ip[4];
-    bool ipB[32];
-    convertIp(sm, ip);
-    convertIpBinary(ip, ipB);
+    bool smB[32];
+    convertIp(sm, smB);
 
     //verify it has only 1 on the left and 0 right
     bool host = false;
     for (int i = 0; i < 32; i++)
     {
-        if (!host and !ipB[i])
+        if (!host and !smB[i])
             host = true;
 
-        if (host and ipB[i])
+        if (host and smB[i])
             return false;
     }
     
     return true;
 }
 
-void convertIp(char *ipS, uint8_t ip[4])
+void convertIp(char *ipS, bool ip[32])
 {
     //THE ADDRES HAS TO BE VALID
 
+    //conversion in decimal
     char octet[5] = "";
+    u_int8_t ipN[4];
     int t = 0;
     int d = 0;
 
@@ -98,7 +98,7 @@ void convertIp(char *ipS, uint8_t ip[4])
         {
             //get octet num and append
             int n = atoi(octet);
-            ip[d] = n;
+            ipN[d] = n;
             d++;
 
             //reset octet
@@ -112,22 +112,53 @@ void convertIp(char *ipS, uint8_t ip[4])
         t++;
         octet[t] = '\0';
     }
-}
 
-void convertIpBinary(uint8_t ip[4], bool ipB[32])
-{
-    //THE ADDRES HAS TO BE VALID
-
-    //conversion with module method
+    //conversion in binary with module method
     int k = 3;
     for (int i = 0; i < 4; i++)
     {
-        int n = ip[i];
+        int n = ipN[i];
         for (int j = 0; j < 8; j++)
         {
-            ipB[32-(k*8)-j-1] = n%2;
+            ip[32-(k*8)-j-1] = n%2;
             n /= 2;
         }
         k--;
+    }
+}
+
+void convertIpString(bool ip[32], char *ipS)
+{
+    //THE ADDRES HAS TO BE VALID
+
+    //conversion from binary
+    u_int8_t ipN[4];
+    for (int i = 0; i < 4; i++)
+    {
+        int n = 0;
+        int k = 0;
+        for (int j = 7+(i*8); j >= i*8; j--)
+        {
+            n += ip[j] * pow(2, k);
+            k++;
+        }
+        
+        ipN[i] = n;
+    }
+
+    //conversion from decimal
+    int j = 0;
+    for (int i = 0; i < 4; i++)
+    {
+        char octet[5];
+        snprintf(octet, sizeof(octet), "%d", ipN[i]);
+        if (i!=3)
+        {
+            octet[strlen(octet)+1] = '\0';
+            octet[strlen(octet)] = '.';
+        }
+
+        strcpy(ipS+j, octet);
+        j += strlen(octet);
     }
 }

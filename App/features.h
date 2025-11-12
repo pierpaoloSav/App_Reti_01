@@ -2,8 +2,20 @@
 
 #include "functions.h"
 
-char findClass(u_int8_t ip[4]);
+struct net
+{
+    bool netId[32];
+    
+    void create(bool id[32]) 
+    { 
+        memcpy(netId, id, sizeof(bool)*32); 
+    }
+};
 
-bool isPrivate(u_int8_t ip[4]);
+char findClass(bool ip[32]);
 
-bool sameNet(u_int8_t ip[4], u_int8_t ip1[4], u_int8_t sm[4]);
+bool isPrivate(bool ip[32]);
+
+bool sameNet(bool ip[32], bool ip1[32], bool sm[32]);
+
+bool subnetting(bool ip[32], int nSubnets, net* table);

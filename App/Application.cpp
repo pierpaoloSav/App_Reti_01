@@ -1,7 +1,7 @@
 #include "Application.h"
 
 Application::Application(int screenWidth, int screenHeight, const char* title) :
-    window(screenWidth, screenHeight, title), //? cambiare window e farla pointer??
+    window(screenWidth, screenHeight, title), //? cambiare window e farla pointer forse
 
     nMod(1),
 
@@ -17,7 +17,7 @@ Application::Application(int screenWidth, int screenHeight, const char* title) :
     plus(570, 110, 20, 20, "+", 10),
     minus(630, 110, 20, 20, "-", 10),
 
-    calculate(50, 240, 100, 20, "CALCULATE", 15),
+    calculate(560, 160, 100, 20, "CALCULATE", 15),
 
     inputError(false),
     outputS("")
@@ -248,34 +248,42 @@ void Application::Processing()
     if (ipCase)
     {
         ipCase->getText(ipS);
-        ipCase->clearText();
-        if (!inputIpValid(ipS) || !isAnIp(ipS))
+
+        if ( !(inputIpValid(ipS) && isAnIp(ipS)) )
             inputError = true;
         else
             inputError = false;
     }
-        
+    
     char ip1S[16] = "";
     if(ipCase1)
     {
         ipCase1->getText(ip1S);
-        ipCase1->clearText();
-        if (!inputIpValid(ip1S) || !isAnIp(ip1S))
+
+        if ( !(inputIpValid(ip1S) && isAnIp(ip1S)) )
             inputError = true;
         else
-            inputError = false;
+            inputError += false;
     }
 
     char smS[16];
     if(smCase)
     {
         smCase->getText(smS);
-        smCase->clearText();
-        if (!inputIpValid(smS) || !isSubnetMask(smS))
+
+        if ( !(inputIpValid(smS) && isSubnetMask(smS)) )
             inputError = true;
         else
-            inputError = false;
+            inputError += false;
     }
+
+    char nSubnetS[7];
+    if (nSubnetCase)
+        nSubnetCase->getText(nSubnetS);
+
+    char toViewS[7];
+    if (subnetToView)
+        subnetToView->getText(toViewS);
 
     //process the data
     switch (nMod)
@@ -289,7 +297,7 @@ void Application::Processing()
             return;
         }
 
-        u_int8_t ip[4];
+        bool ip[32];
         convertIp(ipS, ip);
 
         outputS = "Classe: ";
@@ -298,7 +306,7 @@ void Application::Processing()
             outputS += "\nIndirizzo privato";
         else
             outputS += "\nIndirizzo pubblico";
-
+        
         break;
     }
     case 2:
@@ -309,14 +317,14 @@ void Application::Processing()
             outputS = "Uno o più indirizzi non validi";
             return;
         }
-
-        u_int8_t ip[4];
+    
+        bool ip[32];
         convertIp(ipS, ip);
 
-        u_int8_t ip1[4];
+        bool ip1[32];
         convertIp(ip1S, ip1);
 
-        u_int8_t sm[4];
+        bool sm[32];
         convertIp(smS, sm);
         
         if (sameNet(ip, ip1, sm))
@@ -327,8 +335,35 @@ void Application::Processing()
         break;
     }
     case 3:
+    {
+        //error output
+        if(inputError)
+        {
+            outputS = "Uno o più indirizzi non validi";
+            return;
+        }
+
+        //TODO: optimize
+
+        bool ip[32];
+        convertIp(ipS, ip);
+
+        const int nSubnet = atoi(nSubnetS);
+        int toView =  atoi(toViewS)-1;
+        if (toView < 0) toView = 0;
+        
+        net Table[nSubnet];
+        if (!subnetting(ip, nSubnet, Table))
+        {
+            outputS = "Subnetting non calcolabile";
+            inputError = true;
+            return;
+        }
+
+        memcpy(outputTable, Table+toView, sizeof(outputTable));
         
         break;
+    }
     case 4:
         
         break;
@@ -343,17 +378,6 @@ void Application::Output()
     switch (nMod)
     {
         case 1:
-        {
-            Color color = BLACK;
-            if (inputError)
-                color = RED;
-
-            const char* text = outputS.c_str();
-            int textWidth = MeasureText(text, 50);
-            DrawText(text, 360-(textWidth/2), 360-(50/2), 50, color);
-
-            break;
-        }
         case 2:
         {
             Color color = BLACK;
@@ -368,7 +392,24 @@ void Application::Output()
         }
         case 3:
         {
-            
+            Color color = BLACK;
+            if (inputError)
+            {
+                const char* text = outputS.c_str();
+                int textWidth = MeasureText(text, 50);
+                DrawText(text, 360-(textWidth/2), 360-(50/2), 50, RED);
+                break;
+            }
+
+            //TODO: finire tabella
+            for (int i = 0; i < sizeof(outputTable)/sizeof(outputTable[0]); i++)
+            {
+                char ipS[16];
+                convertIpString(outputTable[i].netId, ipS);
+
+                DrawText(ipS, 50, 240+(i*30)+30, 20, BLACK);
+            }
+
             break;
         }
         case 4:
