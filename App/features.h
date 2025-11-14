@@ -1,16 +1,13 @@
 #pragma once
 
 #include "functions.h"
+#include "net.h"
 
-struct net
-{
-    bool netId[32];
-    
-    void create(bool id[32]) 
-    { 
-        memcpy(netId, id, sizeof(bool)*32); 
-    }
-};
+#include <iostream>
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
 
 char findClass(bool ip[32]);
 
@@ -18,4 +15,4 @@ bool isPrivate(bool ip[32]);
 
 bool sameNet(bool ip[32], bool ip1[32], bool sm[32]);
 
-bool subnetting(bool ip[32], int nSubnets, net* table);
+bool subnetting(bool ip[32], int nSubnets, int subnetRequired, net* table, int nEffSubnets);

@@ -20,7 +20,9 @@ Application::Application(int screenWidth, int screenHeight, const char* title) :
     calculate(560, 160, 100, 20, "CALCULATE", 15),
 
     inputError(false),
-    outputS("")
+    outputS(""),
+    outputTable(nullptr),
+    tableCols(7)
 {
     this->SelectMod();
 }
@@ -42,6 +44,24 @@ Application::~Application()
         delete smCase;
         smCase = nullptr;
     }
+    if (nSubnetCase)
+    {
+        delete nSubnetCase;
+        nSubnetCase = nullptr;
+    }
+    if (subnetToView)
+    {
+        delete subnetToView;
+        subnetToView = nullptr;
+    }
+    if (nHostCase)
+    {
+        delete nHostCase;
+        nHostCase = nullptr;
+    }
+
+    delete[] outputTable;
+    outputTable = nullptr;
 }
 
 void Application::InitIpCase()
@@ -161,7 +181,7 @@ void Application::Render()
 
         //selector render 
             //title render
-            DrawText("Selezionare\nModalità", 520, 30, 30, BLACK);
+            DrawText("Selezionare\nModalità", 520, 30, 30, BLUE);
             //value render
             std::string buff = std::to_string(nMod);
             DrawText(buff.c_str(), 610-(MeasureText(buff.c_str(), 20)/2), 110, 20, BLACK);
@@ -239,6 +259,7 @@ void Application::SelectMod()
 
     //clear output
     outputS = "";
+    inputError = false;
 }
 
 void Application::Processing()
@@ -249,7 +270,7 @@ void Application::Processing()
     {
         ipCase->getText(ipS);
 
-        if ( !(inputIpValid(ipS) && isAnIp(ipS)) )
+        if (!inputIpValid(ipS))
             inputError = true;
         else
             inputError = false;
@@ -260,28 +281,28 @@ void Application::Processing()
     {
         ipCase1->getText(ip1S);
 
-        if ( !(inputIpValid(ip1S) && isAnIp(ip1S)) )
+        if (!inputIpValid(ip1S))
             inputError = true;
         else
             inputError += false;
     }
 
-    char smS[16];
+    char smS[16] = "";
     if(smCase)
     {
         smCase->getText(smS);
 
-        if ( !(inputIpValid(smS) && isSubnetMask(smS)) )
+        if (!inputIpValid(smS))
             inputError = true;
         else
             inputError += false;
     }
 
-    char nSubnetS[7];
+    char nSubnetS[7] = "";
     if (nSubnetCase)
         nSubnetCase->getText(nSubnetS);
 
-    char toViewS[7];
+    char toViewS[7] = "";
     if (subnetToView)
         subnetToView->getText(toViewS);
 
@@ -297,9 +318,11 @@ void Application::Processing()
             return;
         }
 
+        //conversions
         bool ip[32];
         convertIp(ipS, ip);
 
+        //process and get output
         outputS = "Classe: ";
         outputS += findClass(ip);
         if (isPrivate(ip))
@@ -318,6 +341,7 @@ void Application::Processing()
             return;
         }
     
+        //conversions
         bool ip[32];
         convertIp(ipS, ip);
 
@@ -326,7 +350,16 @@ void Application::Processing()
 
         bool sm[32];
         convertIp(smS, sm);
+
+        //mask error
+        if(!isSubnetMask(sm))
+        {
+            outputS = "Subnet Mask errata";
+            inputError = true;
+            return;
+        }
         
+        //process and get output
         if (sameNet(ip, ip1, sm))
             outputS = "Appartengono alla\n stessa rete";
         else
@@ -343,24 +376,32 @@ void Application::Processing()
             return;
         }
 
-        //TODO: optimize
-
+        //conversions
         bool ip[32];
         convertIp(ipS, ip);
 
         const int nSubnet = atoi(nSubnetS);
+
         int toView =  atoi(toViewS)-1;
-        if (toView < 0) toView = 0;
-        
-        net Table[nSubnet];
-        if (!subnetting(ip, nSubnet, Table))
+        if(toView < 0) toView = 0;
+
+        //ip error
+        if(!isAnIp(ip))
         {
+            outputS = "IP superiore alla classe";
+            inputError = true;
+            return;
+        }
+        
+        //process and get output
+        outputTable = new net[tableCols];
+        if(!subnetting(ip, nSubnet, toView, outputTable, tableCols))
+        {
+            //subnet error
             outputS = "Subnetting non calcolabile";
             inputError = true;
             return;
         }
-
-        memcpy(outputTable, Table+toView, sizeof(outputTable));
         
         break;
     }
@@ -380,6 +421,8 @@ void Application::Output()
         case 1:
         case 2:
         {
+            //simple text output
+            
             Color color = BLACK;
             if (inputError)
                 color = RED;
@@ -392,7 +435,7 @@ void Application::Output()
         }
         case 3:
         {
-            Color color = BLACK;
+            //simple text output for error
             if (inputError)
             {
                 const char* text = outputS.c_str();
@@ -401,13 +444,60 @@ void Application::Output()
                 break;
             }
 
-            //TODO: finire tabella
-            for (int i = 0; i < sizeof(outputTable)/sizeof(outputTable[0]); i++)
+            //subnetting table
+            DrawLine(100, 235, 100, 480, BLACK);
+            DrawText("NET-ID", 100+(80-MeasureText("NET-ID", 20)/2), 240, 20, BLACK);
+            DrawLine(100+160, 235, 100+160, 480, BLACK);
+            DrawText("1° H", 100+160+(80-MeasureText("1° H", 20)/2), 240, 20, BLACK);
+            DrawLine(100+160*2, 235, 100+160*2, 480, BLACK);
+            DrawText("Ultimo H", 100+160*2+(80-MeasureText("Ultimo H", 20)/2), 240, 20, BLACK);
+            DrawLine(100+160*2, 235, 100+160*2, 480, BLACK);
+            DrawText("Gateway", 100+160*3+(80-MeasureText("Gateway", 20)/2), 240, 20, BLACK);
+            DrawLine(100+160*3, 235, 100+160*3, 480, BLACK);
+            DrawText("Broad.", 100+160*4+(80-MeasureText("Broad.", 20)/2), 240, 20, BLACK);
+            DrawLine(100+160*4, 235, 100+160*4, 480, BLACK);
+            DrawText("SM", 100+160*5+(80-MeasureText("SM", 20)/2), 240, 20, BLACK);
+            DrawLine(100+160*5, 235, 100+160*5, 480, BLACK);
+    
+            DrawLine(0, 235, 1060, 235, BLACK);
+            DrawLine(0, 265, 1060, 265, BLACK);
+            if(outputTable)
             {
-                char ipS[16];
-                convertIpString(outputTable[i].netId, ipS);
+                for (int i = 0; i < tableCols; i++)
+                {
+                    if (!outputTable[i].created)
+                        continue;
 
-                DrawText(ipS, 50, 240+(i*30)+30, 20, BLACK);
+                    std::string n = std::to_string(outputTable[i].m_nSubnet);
+                    n.append("°");
+                    DrawText(n.c_str(), (50-MeasureText(n.c_str(), 20)/2), 240+(i*30)+30, 20, BLACK);
+
+                    char ipS[16] = "";
+
+                    convertIpString(outputTable[i].netId, ipS);
+                    int textWidht = MeasureText(ipS, 20);
+                    DrawText(ipS, 100+(80-textWidht/2), 240+(i*30)+30, 20, BLACK);
+
+                    convertIpString(outputTable[i].h1, ipS);
+                    textWidht = MeasureText(ipS, 20);
+                    DrawText(ipS, 100+160+(80-textWidht/2), 240+(i*30)+30, 20, BLACK);
+
+                    convertIpString(outputTable[i].h2, ipS);
+                    textWidht = MeasureText(ipS, 20);
+                    DrawText(ipS, 100+160*2+(80-textWidht/2), 240+(i*30)+30, 20, BLACK);
+
+                    convertIpString(outputTable[i].gateway, ipS);
+                    textWidht = MeasureText(ipS, 20);
+                    DrawText(ipS, 100+160*3+(80-textWidht/2), 240+(i*30)+30, 20, BLACK);
+
+                    convertIpString(outputTable[i].broadcast, ipS);
+                    textWidht = MeasureText(ipS, 20);
+                    DrawText(ipS, 100+160*4+(80-textWidht/2), 240+(i*30)+30, 20, BLACK);
+
+                    convertIpString(outputTable[i].sm, ipS);
+                    textWidht = MeasureText(ipS, 20);
+                    DrawText(ipS, 100+160*5+(80-textWidht/2), 240+(i*30)+30, 20, BLACK);
+                }
             }
 
             break;

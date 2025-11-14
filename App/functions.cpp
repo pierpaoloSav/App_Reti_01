@@ -44,41 +44,44 @@ bool inputIpValid(char *ip)
     return true;
 }
 
-bool isAnIp(char *ip)
+bool isAnIp(bool ip[32])
 {
-    //THE ADDRES HAS TO BE VALID
+    //verify ip is not over class C
+    int i = 0;
+    while(ip[i])
+    {
+        if(i == 2)
+            return false;
 
-    //get first octet num
-    char octet[4];
-    for (int i = 0; ip[i] != '.'; i++)
-        octet[i] = ip[i];
+        i++;
+    }
     
-    //ip can't be of class d/e
-    if (atoi(octet) < 224)
-        return true;
-    else
-        return false;
+    return true;
 }
 
-bool isSubnetMask(char *sm)
+bool isSubnetMask(bool sm[32])
 {
-    //THE ADDRES HAS TO BE VALID
-
-    //get binary sm
-    bool smB[32];
-    convertIp(sm, smB);
-
     //verify it has only 1 on the left and 0 right
     bool host = false;
     for (int i = 0; i < 32; i++)
     {
-        if (!host and !smB[i])
+        if (!host and !sm[i])
             host = true;
 
-        if (host and smB[i])
+        if (host and sm[i])
             return false;
     }
     
+    return true;
+}
+
+bool isNetId(bool ip[32], uint8_t netBits)
+{
+    //verify it hasn't 1s in the host id
+    for (int i = netBits; i < 32; i++)
+        if (ip[i])
+            return false;
+
     return true;
 }
 

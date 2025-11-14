@@ -58,32 +58,34 @@ bool sameNet(bool ip[32], bool ip1[32], bool sm[32])
     return true;
 }
 
-bool subnetting(bool ip[32], int nSubnets, net* table)
+bool subnetting(bool ip[32], int nSubnets, int subnetRequired, net* table, int nEffSubnets)
 {
     //calculate some vars
     const int nBit = ceil(log2(nSubnets));
     int s = ((int)findClass(ip)-96) * 8;
     int e = s+nBit -1;
-    if (e > 29)
-        return false;
+    if (e > 29 || !isNetId(ip, s))
+        return false; //? classless o classfull solo
 
-    for (int i = 0; i < nSubnets; i++)
+    int k = subnetRequired;
+    for (int i = 0; i < nEffSubnets && k < nSubnets; i++)
     {
         bool subId[nBit];
         bool netId[32];
         memcpy(netId, ip, sizeof(bool)*32);
 
         //get the subnet part and copy it in the netId
-        int temp = i;
+        int temp = k;
         for (int j = nBit-1; j >= 0; j--)
         {
             subId[j] = temp%2;
             temp /= 2;
         }
+        k++;
         memcpy(netId+s, subId, sizeof(bool)*nBit);
         
         //add in the table
-        table[i].create(netId);
+        table[i].create(netId, e+1, k);
     }
 
     return true;

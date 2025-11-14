@@ -11,6 +11,7 @@
 #include "Button.h"
 #include "functions.h"
 #include "features.h"
+#include "net.h"
 
 class Application
 {
@@ -53,5 +54,6 @@ private:
 
     bool inputError;
     std::string outputS;
-    net outputTable[6];
+    net *outputTable;
+    const int tableCols;
 };
