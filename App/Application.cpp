@@ -1,7 +1,7 @@
 #include "Application.h"
 
 Application::Application(int screenWidth, int screenHeight, const char* title) :
-    window(screenWidth, screenHeight, title), //? cambiare window e farla pointer forse
+    window(screenWidth, screenHeight, title), 
 
     nMod(1),
 
@@ -14,10 +14,11 @@ Application::Application(int screenWidth, int screenHeight, const char* title) :
     nHostCase(nullptr),
 
     //Buttons
-    plus(570, 110, 20, 20, "+", 10),
-    minus(630, 110, 20, 20, "-", 10),
+    plus(470, 110, 20, 20, "+", 10),
+    minus(550, 110, 20, 20, "-", 10),
 
-    calculate(560, 160, 100, 20, "CALCULATE", 15),
+    calculate(470, 160, 100, 20, "CALCULATE", 15),
+    description(""),
 
     inputError(false),
     outputS(""),
@@ -138,7 +139,7 @@ void Application::Loop()
         nHostCase->event();
     bool b_plus = plus.pressed();
     bool b_minus = minus.pressed();
-    bool b_calculate = calculate.pressed();
+    bool b_calculate = calculate.pressed() || IsKeyPressed(KEY_ENTER);
 
     //SELECTOR//
     if (b_plus && nMod < 4)
@@ -181,10 +182,15 @@ void Application::Render()
 
         //selector render 
             //title render
-            DrawText("Selezionare\nModalità", 520, 30, 30, BLUE);
+            int xOff = 420;
+            int yOff = 30;
+            DrawText("Selezionare", xOff+100-(MeasureText("Selezionare", 30)/2), yOff, 30, BLUE);
+            DrawText("Modalità", xOff+100-(MeasureText("Modalità", 30)/2), yOff+30, 30, BLUE);
             //value render
             std::string buff = std::to_string(nMod);
-            DrawText(buff.c_str(), 610-(MeasureText(buff.c_str(), 20)/2), 110, 20, BLACK);
+            DrawText(buff.c_str(), xOff+90+10-(MeasureText(buff.c_str(), 20)/2), yOff+80, 20, BLACK);
+            //description render
+            DrawText(description.c_str(), xOff+200+100, yOff+30, 20, BLACK);
             //buttons render
             plus.render();
             minus.render();
@@ -230,27 +236,37 @@ void Application::SelectMod()
         delete nHostCase;
         nHostCase = nullptr;
     }
-    //create news
+
+    description = "";
+
+    //create new
     switch (nMod)
     {
     case 1:
         InitIpCase();
+
+        description = "Dato un indirizzo IP\ndire di che classe è\ne se è un indirizzo privato";
         break;
     case 2:
         InitIpCase();
         InitIpCase1();
         InitSmCase();
+
+        description = "Dato un indirizzo IP\ne Subnet Mask\ndire se appartengono\nalla stessa rete";
         break;
     case 3:
         InitIpCase();
         InitNSubnetCase();
         InitSubnetToView();
+
+        description = "\nSUBNETTING FISSO";
         break;
     case 4:
         InitIpCase();
         InitNSubnetCase();
         InitNHostCase();
         
+        description = "\nSUBNETTING VARIABILE\n(VLSM)";
         break;
     default:
         std::cout << "ERROR: wrong mod value" << "\n";
@@ -260,6 +276,8 @@ void Application::SelectMod()
     //clear output
     outputS = "";
     inputError = false;
+    delete[] outputTable;
+    outputTable = nullptr;
 }
 
 void Application::Processing()
@@ -428,8 +446,10 @@ void Application::Output()
                 color = RED;
 
             const char* text = outputS.c_str();
+            int xOff = window.getWidth()/2;
+            int yOff = 360;
             int textWidth = MeasureText(text, 50);
-            DrawText(text, 360-(textWidth/2), 360-(50/2), 50, color);
+            DrawText(text, xOff-(textWidth/2), yOff-(50/2), 50, color);
             
             break;
         }
@@ -439,28 +459,41 @@ void Application::Output()
             if (inputError)
             {
                 const char* text = outputS.c_str();
+                int xOff = window.getWidth()/2;
+                int yOff = 360;
                 int textWidth = MeasureText(text, 50);
-                DrawText(text, 360-(textWidth/2), 360-(50/2), 50, RED);
+                DrawText(text, xOff-(textWidth/2), yOff-(50/2), 50, RED);
                 break;
             }
 
-            //subnetting table
-            DrawLine(100, 235, 100, 480, BLACK);
-            DrawText("NET-ID", 100+(80-MeasureText("NET-ID", 20)/2), 240, 20, BLACK);
-            DrawLine(100+160, 235, 100+160, 480, BLACK);
-            DrawText("1° H", 100+160+(80-MeasureText("1° H", 20)/2), 240, 20, BLACK);
-            DrawLine(100+160*2, 235, 100+160*2, 480, BLACK);
-            DrawText("Ultimo H", 100+160*2+(80-MeasureText("Ultimo H", 20)/2), 240, 20, BLACK);
-            DrawLine(100+160*2, 235, 100+160*2, 480, BLACK);
-            DrawText("Gateway", 100+160*3+(80-MeasureText("Gateway", 20)/2), 240, 20, BLACK);
-            DrawLine(100+160*3, 235, 100+160*3, 480, BLACK);
-            DrawText("Broad.", 100+160*4+(80-MeasureText("Broad.", 20)/2), 240, 20, BLACK);
-            DrawLine(100+160*4, 235, 100+160*4, 480, BLACK);
-            DrawText("SM", 100+160*5+(80-MeasureText("SM", 20)/2), 240, 20, BLACK);
-            DrawLine(100+160*5, 235, 100+160*5, 480, BLACK);
-    
-            DrawLine(0, 235, 1060, 235, BLACK);
-            DrawLine(0, 265, 1060, 265, BLACK);
+            //SUBNETTING TABLE
+            int xOff = 100; //size of number col
+            int yOff = window.getHeight()/2;
+            int cSize = 20;
+            int col = 160;
+            int row = 30;
+
+            //table fields
+            DrawText("NET-ID",   xOff         +(col/2-MeasureText("NET-ID", cSize)/2), yOff, cSize, BLACK);
+            DrawText("1° H",     xOff +col    +(col/2-MeasureText("1° H", cSize)/2), yOff, cSize, BLACK);
+            DrawText("Ultimo H", xOff +col*2  +(col/2-MeasureText("Ultimo H", cSize)/2), yOff, cSize, BLACK);
+            DrawText("Gateway",  xOff +col*3  +(col/2-MeasureText("Gateway", cSize)/2), yOff, cSize, BLACK);
+            DrawText("Broad.",   xOff +col*4  +(col/2-MeasureText("Broad.", cSize)/2), yOff, cSize, BLACK);
+            DrawText("SM",       xOff +col*5  +(col/2-MeasureText("SM", cSize)/2), yOff, cSize, BLACK);
+            
+            //vertical lines
+            DrawLine(xOff,        yOff-5, xOff,        window.getHeight(), BLACK);
+            DrawLine(xOff +col,   yOff-5, xOff +col,   window.getHeight(), BLACK);
+            DrawLine(xOff +col*2, yOff-5, xOff +col*2, window.getHeight(), BLACK);
+            DrawLine(xOff +col*3, yOff-5, xOff +col*3, window.getHeight(), BLACK);
+            DrawLine(xOff +col*4, yOff-5, xOff +col*4, window.getHeight(), BLACK);
+            DrawLine(xOff +col*5, yOff-5, xOff +col*5, window.getHeight(), BLACK);
+            
+            //horizontal lines
+            DrawLine(0, yOff-5,     window.getWidth(), yOff-5,     BLACK);
+            DrawLine(0, yOff-5 +30, window.getWidth(), yOff-5 +30, BLACK);
+
+            //values
             if(outputTable)
             {
                 for (int i = 0; i < tableCols; i++)
@@ -468,35 +501,36 @@ void Application::Output()
                     if (!outputTable[i].created)
                         continue;
 
+                    //number col
                     std::string n = std::to_string(outputTable[i].m_nSubnet);
                     n.append("°");
-                    DrawText(n.c_str(), (50-MeasureText(n.c_str(), 20)/2), 240+(i*30)+30, 20, BLACK);
+                    DrawText(n.c_str(), (xOff/2-MeasureText(n.c_str(), cSize)/2), yOff +row +(i*row), cSize, BLACK);
 
                     char ipS[16] = "";
-
+                    
                     convertIpString(outputTable[i].netId, ipS);
-                    int textWidht = MeasureText(ipS, 20);
-                    DrawText(ipS, 100+(80-textWidht/2), 240+(i*30)+30, 20, BLACK);
+                    int textWidht = MeasureText(ipS, cSize);
+                    DrawText(ipS, xOff        +(col/2-textWidht/2), yOff +row +(i*row), cSize, BLACK);
 
                     convertIpString(outputTable[i].h1, ipS);
-                    textWidht = MeasureText(ipS, 20);
-                    DrawText(ipS, 100+160+(80-textWidht/2), 240+(i*30)+30, 20, BLACK);
+                    textWidht = MeasureText(ipS, cSize);
+                    DrawText(ipS, xOff +col   +(col/2-textWidht/2), yOff +row +(i*row), cSize, BLACK);
 
                     convertIpString(outputTable[i].h2, ipS);
-                    textWidht = MeasureText(ipS, 20);
-                    DrawText(ipS, 100+160*2+(80-textWidht/2), 240+(i*30)+30, 20, BLACK);
+                    textWidht = MeasureText(ipS, cSize);
+                    DrawText(ipS, xOff +col*2 +(col/2-textWidht/2), yOff +row +(i*row), cSize, BLACK);
 
                     convertIpString(outputTable[i].gateway, ipS);
-                    textWidht = MeasureText(ipS, 20);
-                    DrawText(ipS, 100+160*3+(80-textWidht/2), 240+(i*30)+30, 20, BLACK);
+                    textWidht = MeasureText(ipS, cSize);
+                    DrawText(ipS, xOff +col*3 +(col/2-textWidht/2), yOff +row +(i*row), cSize, BLACK);
 
                     convertIpString(outputTable[i].broadcast, ipS);
-                    textWidht = MeasureText(ipS, 20);
-                    DrawText(ipS, 100+160*4+(80-textWidht/2), 240+(i*30)+30, 20, BLACK);
+                    textWidht = MeasureText(ipS, cSize);
+                    DrawText(ipS, xOff +col*4 +(col/2-textWidht/2), yOff +row +(i*row), cSize, BLACK);
 
                     convertIpString(outputTable[i].sm, ipS);
-                    textWidht = MeasureText(ipS, 20);
-                    DrawText(ipS, 100+160*5+(80-textWidht/2), 240+(i*30)+30, 20, BLACK);
+                    textWidht = MeasureText(ipS, cSize);
+                    DrawText(ipS, xOff +col*5 +(col/2-textWidht/2), yOff +row +(i*row), cSize, BLACK);
                 }
             }
 

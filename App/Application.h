@@ -1,17 +1,8 @@
 #pragma once
 
-//?
-#include <inttypes.h>
-#include <iostream>
-#include <string>
-#include <unordered_set>
-
-#include "Window.h"
-#include "TextCase.h"
-#include "Button.h"
+#include "headers.h"
 #include "functions.h"
 #include "features.h"
-#include "net.h"
 
 class Application
 {
@@ -51,6 +42,7 @@ private:
     Button minus;
 
     Button calculate;
+    std::string description;
 
     bool inputError;
     std::string outputS;

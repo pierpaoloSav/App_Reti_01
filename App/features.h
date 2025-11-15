@@ -1,13 +1,7 @@
 #pragma once
 
+#include "headers.h"
 #include "functions.h"
-#include "net.h"
-
-#include <iostream>
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
 
 char findClass(bool ip[32]);
 

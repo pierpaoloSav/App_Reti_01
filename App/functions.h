@@ -1,10 +1,6 @@
 #pragma once
 
-#include <iostream>
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
+#include "headers.h"
 
 bool inputIpValid(char *ip);
 
