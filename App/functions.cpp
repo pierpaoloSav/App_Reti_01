@@ -165,3 +165,48 @@ void convertIpString(bool ip[32], char *ipS)
         j += strlen(octet);
     }
 }
+
+void convertIpBinaryString(bool ip[32], char *ipS)
+{
+    int pos = 0;
+    for (int i = 0; i < 32; i++) {
+        ipS[pos++] = ip[i] ? '1' : '0';
+        if ((i + 1) % 8 == 0 && i != 31) {
+            ipS[pos++] = '.';
+        }
+    }
+    ipS[pos] = '\0';
+}
+
+void binarySum(bool ip[32], bool ip1[32])
+{
+    bool carry = 0;
+    for (int i = 31; i >= 0; i--)
+    {
+        int sum = ip[i] + ip1[i] + carry;
+
+        ip[i] = (sum % 2);
+        carry = (sum / 2); 
+    }
+}
+
+void bubbleSortDesc(int arr[], int n)
+{
+    for (int i = 0; i < n - 1; i++)
+    {
+        bool swapped = false;
+        for (int j = 0; j < n - i - 1; j++)
+        {
+            if (arr[j] < arr[j + 1])
+            {
+                int temp = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = temp;
+                swapped = true;
+            }
+        }
+
+        if (!swapped)
+            break;
+    }
+}

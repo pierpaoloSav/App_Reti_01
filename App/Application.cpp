@@ -13,6 +13,8 @@ Application::Application(int screenWidth, int screenHeight, const char* title) :
     subnetToView(nullptr),
     nHostCase(nullptr),
 
+    nHostsInput(false),
+
     //Buttons
     plus(470, 110, 20, 20, "+", 10),
     minus(550, 110, 20, 20, "-", 10),
@@ -125,29 +127,29 @@ void Application::run()
 void Application::Loop()
 {
     //--------INPUTS--------//
-    if(ipCase)
+    if(ipCase && !nHostsInput)
         ipCase->event();
     if(ipCase1)
         ipCase1->event();
     if(smCase)
         smCase->event();
-    if(nSubnetCase)
+    if(nSubnetCase && !nHostsInput)
         nSubnetCase->event();
     if(subnetToView)
         subnetToView->event();
-    if(nHostCase)
+    if(nHostCase && nHostsInput)
         nHostCase->event();
     bool b_plus = plus.pressed();
     bool b_minus = minus.pressed();
-    bool b_calculate = calculate.pressed() || IsKeyPressed(KEY_ENTER);
+    bool b_calculate = calculate.pressed();
 
     //SELECTOR//
-    if (b_plus && nMod < 4)
+    if (b_plus && nMod < 4 && !nHostsInput)
     {
         nMod++;
         this->SelectMod();
     }
-    if (b_minus && nMod > 1)
+    if (b_minus && nMod > 1 && !nHostsInput)
     {
         nMod--;
         this->SelectMod();
@@ -190,7 +192,7 @@ void Application::Render()
             std::string buff = std::to_string(nMod);
             DrawText(buff.c_str(), xOff+90+10-(MeasureText(buff.c_str(), 20)/2), yOff+80, 20, BLACK);
             //description render
-            DrawText(description.c_str(), xOff+200+100, yOff+30, 20, BLACK);
+            DrawText(description.c_str(), xOff+200+100, yOff+30, 20, BLUE);
             //buttons render
             plus.render();
             minus.render();
@@ -278,6 +280,7 @@ void Application::SelectMod()
     inputError = false;
     delete[] outputTable;
     outputTable = nullptr;
+    nHostsInput = false;
 }
 
 void Application::Processing()
@@ -324,18 +327,25 @@ void Application::Processing()
     if (subnetToView)
         subnetToView->getText(toViewS);
 
+    char nHostS[7] = "";
+    if (nHostCase)
+    {
+        nHostCase->getText(nHostS);
+        nHostCase->clearText();
+    }
+
+    //error output
+    if(inputError)
+    {
+        outputS = "Uno o più indirizzi non validi";
+        return;
+    }
+
     //process the data
     switch (nMod)
     {
     case 1:
     {
-        //error output
-        if(inputError)
-        {
-            outputS = "Uno o più indirizzi non validi";
-            return;
-        }
-
         //conversions
         bool ip[32];
         convertIp(ipS, ip);
@@ -352,13 +362,6 @@ void Application::Processing()
     }
     case 2:
     {    
-        //error output
-        if(inputError)
-        {
-            outputS = "Uno o più indirizzi non validi";
-            return;
-        }
-    
         //conversions
         bool ip[32];
         convertIp(ipS, ip);
@@ -387,13 +390,6 @@ void Application::Processing()
     }
     case 3:
     {
-        //error output
-        if(inputError)
-        {
-            outputS = "Uno o più indirizzi non validi";
-            return;
-        }
-
         //conversions
         bool ip[32];
         convertIp(ipS, ip);
@@ -406,7 +402,7 @@ void Application::Processing()
         //ip error
         if(!isAnIp(ip))
         {
-            outputS = "IP superiore alla classe";
+            outputS = "IP superiore alla classe c";
             inputError = true;
             return;
         }
@@ -418,14 +414,82 @@ void Application::Processing()
             //subnet error
             outputS = "Subnetting non calcolabile";
             inputError = true;
+            delete[] outputTable;
+            outputTable = nullptr;
             return;
         }
         
         break;
     }
     case 4:
-        
+    {
+        static bool ip[32];
+        static int nSubnet;
+        static std::vector<int> nHosts;
+        static int i = 0;
+
+        if (!nHostsInput)
+        {
+            //conversions
+            convertIp(ipS, ip);
+
+            nSubnet = atoi(nSubnetS);
+            
+            //ip error
+            if(!isAnIp(ip))
+            {
+                outputS = "IP superiore alla classe c";
+                inputError = true;
+                return;
+            }
+
+            //next phase, getting all nHosts
+            nHostsInput = true;
+        }
+        else
+        {    
+            //get all nHosts
+            if (i < nSubnet)
+            {
+                nHosts.push_back(atoi(nHostS));
+                i++;
+                if (nHosts[i-1] == 0)
+                {
+                    //subnet error
+                    outputS = "Una rete non può avere 0 host";
+                    inputError = true;
+                    //delete table
+                    delete[] outputTable;
+                    outputTable = nullptr;
+                    //go to the end
+                    goto reset;
+                }
+                //continue only on the last input
+                if (i != nSubnet)
+                    return;
+            }
+
+            //process and get output
+            outputTable = new net[tableCols];           //TODO: da input
+            if(!vlsmSubnetting(ip, nSubnet, nHosts.data(), 5, outputTable, tableCols))
+            {
+                //subnet error
+                outputS = "Subnetting non calcolabile";
+                inputError = true;
+                delete[] outputTable;
+                outputTable = nullptr;
+            }
+
+            reset:
+            //for static variables
+            i = 0;
+            nSubnet = 0;
+            nHosts.clear();
+            nHostsInput = false;
+        }
+
         break;
+    }
     default:
         std::cout << "ERROR: wrong mod value" << "\n";
         break;
@@ -454,6 +518,7 @@ void Application::Output()
             break;
         }
         case 3:
+        case 4:
         {
             //simple text output for error
             if (inputError)
@@ -472,6 +537,11 @@ void Application::Output()
             int cSize = 20;
             int col = 160;
             int row = 30;
+            bool binary = false; //! RISOLVERE SITUAZIONE BINARY
+            if (binary)
+            {
+                cSize = 5;
+            }
 
             //table fields
             DrawText("NET-ID",   xOff         +(col/2-MeasureText("NET-ID", cSize)/2), yOff, cSize, BLACK);
@@ -506,39 +576,53 @@ void Application::Output()
                     n.append("°");
                     DrawText(n.c_str(), (xOff/2-MeasureText(n.c_str(), cSize)/2), yOff +row +(i*row), cSize, BLACK);
 
-                    char ipS[16] = "";
+                    char ipS[36] = "";
+                    int textWidht;
                     
-                    convertIpString(outputTable[i].netId, ipS);
-                    int textWidht = MeasureText(ipS, cSize);
+                    if (binary)
+                        convertIpBinaryString(outputTable[i].netId, ipS);
+                    else
+                        convertIpString(outputTable[i].netId, ipS);
+                    textWidht = MeasureText(ipS, cSize);
                     DrawText(ipS, xOff        +(col/2-textWidht/2), yOff +row +(i*row), cSize, BLACK);
-
-                    convertIpString(outputTable[i].h1, ipS);
+                    
+                    if (binary)
+                        convertIpBinaryString(outputTable[i].h1, ipS);
+                    else
+                        convertIpString(outputTable[i].h1, ipS);
                     textWidht = MeasureText(ipS, cSize);
                     DrawText(ipS, xOff +col   +(col/2-textWidht/2), yOff +row +(i*row), cSize, BLACK);
 
-                    convertIpString(outputTable[i].h2, ipS);
+                    if (binary)
+                        convertIpBinaryString(outputTable[i].h2, ipS);
+                    else
+                        convertIpString(outputTable[i].h2, ipS);
                     textWidht = MeasureText(ipS, cSize);
                     DrawText(ipS, xOff +col*2 +(col/2-textWidht/2), yOff +row +(i*row), cSize, BLACK);
 
-                    convertIpString(outputTable[i].gateway, ipS);
+                    if (binary)
+                        convertIpBinaryString(outputTable[i].gateway, ipS);
+                    else
+                        convertIpString(outputTable[i].gateway, ipS);
                     textWidht = MeasureText(ipS, cSize);
                     DrawText(ipS, xOff +col*3 +(col/2-textWidht/2), yOff +row +(i*row), cSize, BLACK);
 
-                    convertIpString(outputTable[i].broadcast, ipS);
+                    if (binary)
+                        convertIpBinaryString(outputTable[i].broadcast, ipS);
+                    else
+                        convertIpString(outputTable[i].broadcast, ipS);
                     textWidht = MeasureText(ipS, cSize);
                     DrawText(ipS, xOff +col*4 +(col/2-textWidht/2), yOff +row +(i*row), cSize, BLACK);
 
-                    convertIpString(outputTable[i].sm, ipS);
+                    if (binary)
+                        convertIpBinaryString(outputTable[i].sm, ipS);
+                    else
+                        convertIpString(outputTable[i].sm, ipS);
                     textWidht = MeasureText(ipS, cSize);
                     DrawText(ipS, xOff +col*5 +(col/2-textWidht/2), yOff +row +(i*row), cSize, BLACK);
                 }
             }
 
-            break;
-        }
-        case 4:
-        {
-           
             break;
         }
         default:

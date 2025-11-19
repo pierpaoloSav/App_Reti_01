@@ -110,3 +110,8 @@ void TextCase::setValid(std::unordered_set<char> &valid)
 {
     m_valid = new std::unordered_set<char>(valid);
 }
+
+void TextCase::unSelect()
+{
+    m_isUsing = false;
+}

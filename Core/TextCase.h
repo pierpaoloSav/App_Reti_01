@@ -32,6 +32,7 @@ public:
 
     void setTitle(const char* title);
     void setValid(std::unordered_set<char> &valid);
+    void unSelect();
 
 private:
     Rectangle m_case;

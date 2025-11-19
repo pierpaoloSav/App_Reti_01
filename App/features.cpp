@@ -90,3 +90,72 @@ bool subnetting(bool ip[32], int nSubnets, int subnetRequired, net* table, int n
 
     return true;
 }
+
+bool vlsmSubnetting(bool ip[32], int nSubnets, int *nHosts, int subnetRequired, net *table, int nEffSubnets)
+{
+    //get the class
+    int cidr = ((int)findClass(ip)-96) * 8; //? classless o classfull solo
+
+    //sort hosts
+    int sortedHosts[nSubnets];
+    memcpy(sortedHosts, nHosts, sizeof(int)*nSubnets);
+    bubbleSortDesc(sortedHosts, nSubnets);
+
+    net Table[nSubnets];
+    bool netId[32];
+    memcpy(netId, ip, sizeof(bool)*32);
+    for (int i = 0; i < nSubnets; i++)
+    {
+        //get current cidr
+        int cCidr = 32 - log2(sortedHosts[i]+3);  //? mettere il +2/3 personalizzabile
+        if (cCidr <= cidr)
+            return false;
+
+        //add the subnet in the input order
+            //get the number of the subnet
+            int n = 0;
+            for (; n < nSubnets && sortedHosts[i] != nHosts[n]; n++);
+            nHosts[n] = -1;
+
+            //build a ordered table
+            int k = i-1;
+            if (k != -1 && Table[k].m_nSubnet > (n+1))
+            {
+                //shift 
+                while (k != -1 && Table[k].m_nSubnet > (n+1))
+                {
+                    Table[k+1] = Table[k];
+                    k--;
+                }
+
+                Table[k+1].create(netId, cCidr, (n+1));
+            }
+            else
+                Table[i].create(netId, cCidr, (n+1));
+
+        //save the old netId for control
+        bool oldNetId[32];
+        memcpy(oldNetId, netId, sizeof(bool)*32);
+
+        //get newNetId
+        bool toSum[32] = {0};
+        toSum[cCidr-1] = 1;
+        binarySum(netId, toSum);
+
+        //subnet error if the sum modified the original netId
+        for (int j = 0; j < cidr; j++) 
+        {
+            if (netId[j] != oldNetId[j])
+            return false;
+        }
+    }
+
+    int toAlloc;
+    if (nEffSubnets < nSubnets)
+        toAlloc = nEffSubnets;
+    else
+        toAlloc = nSubnets;
+    memcpy(table, Table+subnetRequired, sizeof(net)*(toAlloc));
+
+    return true;
+}

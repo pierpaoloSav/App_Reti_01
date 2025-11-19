@@ -1,6 +1,8 @@
 #pragma once
 
 #include "headers.h"
+#include "functions.h"
+void binarySum(bool ip[32], bool ip1[32]);
 
 struct net
 {
@@ -31,14 +33,19 @@ struct net
 
         memcpy(h2, broadcast, sizeof(bool)*32); 
         {
+            //two's complement of two
             bool two[32];
             memset(two, 0, 32);
             two[30] = 1;
-
-            for (int i = 0; i < 32; i++)
+            bool change = false;
+            for (int i = 31; i >= 0; i--)
             {
-                h2[i] = h2[i] && !(two[i]);
-            }
+                if (change) two[i] = !two[i];
+                if (two[i]) change = true; 
+            }            
+
+            //sum
+            binarySum(h2, two);
         }
 
         memset(sm, 0, 32);

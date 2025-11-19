@@ -36,6 +36,8 @@ private:
     TextCase *nSubnetCase;
     TextCase *subnetToView;
     TextCase *nHostCase;
+    
+    bool nHostsInput;
 
     uint8_t nMod;
     Button plus;

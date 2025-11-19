@@ -13,3 +13,9 @@ bool isNetId(bool ip[32], uint8_t netBits);
 void convertIp(char *ipS, bool ip[32]);
 
 void convertIpString(bool ip[32], char *ipS);
+
+void convertIpBinaryString(bool ip[32], char *ipS);
+
+void binarySum(bool ip[32], bool ip1[32]);
+
+void bubbleSortDesc(int arr[], int n);
