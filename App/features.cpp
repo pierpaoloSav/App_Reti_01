@@ -58,7 +58,7 @@ bool sameNet(bool ip[32], bool ip1[32], bool sm[32])
     return true;
 }
 
-bool subnetting(bool ip[32], int nSubnets, int subnetRequired, net* table, int nEffSubnets)
+bool subnetting(bool ip[32], int nSubnets, int subnetRequired, net* table, int nEffSubnets, bool gateway)
 {
     //calculate some vars
     const int nBit = ceil(log2(nSubnets));
@@ -85,13 +85,13 @@ bool subnetting(bool ip[32], int nSubnets, int subnetRequired, net* table, int n
         memcpy(netId+s, subId, sizeof(bool)*nBit);
         
         //add in the table
-        table[i].create(netId, e+1, k);
+        table[i].create(netId, e+1, k, gateway);
     }
 
     return true;
 }
 
-bool vlsmSubnetting(bool ip[32], int nSubnets, int *nHosts, int subnetRequired, net *table, int nEffSubnets)
+bool vlsmSubnetting(bool ip[32], int nSubnets, int *nHosts, net *table, bool gateway)
 {
     //get the class
     int cidr = ((int)findClass(ip)-96) * 8; //? classless o classfull solo
@@ -101,13 +101,12 @@ bool vlsmSubnetting(bool ip[32], int nSubnets, int *nHosts, int subnetRequired, 
     memcpy(sortedHosts, nHosts, sizeof(int)*nSubnets);
     bubbleSortDesc(sortedHosts, nSubnets);
 
-    net Table[nSubnets];
     bool netId[32];
     memcpy(netId, ip, sizeof(bool)*32);
     for (int i = 0; i < nSubnets; i++)
     {
         //get current cidr
-        int cCidr = 32 - log2(sortedHosts[i]+3);  //? mettere il +2/3 personalizzabile
+        int cCidr = 32 - log2(sortedHosts[i]+(2+(int)gateway));
         if (cCidr <= cidr)
             return false;
 
@@ -119,19 +118,19 @@ bool vlsmSubnetting(bool ip[32], int nSubnets, int *nHosts, int subnetRequired, 
 
             //build a ordered table
             int k = i-1;
-            if (k != -1 && Table[k].m_nSubnet > (n+1))
+            if (k != -1 && table[k].m_nSubnet > (n+1))
             {
                 //shift 
-                while (k != -1 && Table[k].m_nSubnet > (n+1))
+                while (k != -1 && table[k].m_nSubnet > (n+1))
                 {
-                    Table[k+1] = Table[k];
+                    table[k+1] = table[k];
                     k--;
                 }
 
-                Table[k+1].create(netId, cCidr, (n+1));
+                table[k+1].create(netId, cCidr, (n+1), gateway);
             }
             else
-                Table[i].create(netId, cCidr, (n+1));
+                table[i].create(netId, cCidr, (n+1), gateway);
 
         //save the old netId for control
         bool oldNetId[32];
@@ -149,13 +148,6 @@ bool vlsmSubnetting(bool ip[32], int nSubnets, int *nHosts, int subnetRequired, 
             return false;
         }
     }
-
-    int toAlloc;
-    if (nEffSubnets < nSubnets)
-        toAlloc = nEffSubnets;
-    else
-        toAlloc = nSubnets;
-    memcpy(table, Table+subnetRequired, sizeof(net)*(toAlloc));
 
     return true;
 }

@@ -9,6 +9,6 @@ bool isPrivate(bool ip[32]);
 
 bool sameNet(bool ip[32], bool ip1[32], bool sm[32]);
 
-bool subnetting(bool ip[32], int nSubnets, int subnetRequired, net* table, int nEffSubnets);
+bool subnetting(bool ip[32], int nSubnets, int subnetRequired, net* table, int nEffSubnets, bool gateway);
 
-bool vlsmSubnetting(bool ip[32], int nSubnets, int *nHosts, int subnetRequired, net *table, int nEffSubnets);
+bool vlsmSubnetting(bool ip[32], int nSubnets, int *nHosts, net *table, bool gateway);

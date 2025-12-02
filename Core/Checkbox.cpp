@@ -1,18 +1,17 @@
-#include "Button.h"
+#include "Checkbox.h"
 
-Button::Button(float posX, float posY, int width, int height, const char* title, int fontSize) :
-    m_title(title),
-    m_fontSize(fontSize),
+Checkbox::Checkbox(float posX, float posY, int side) :
+    m_status(false),
     m_down(false)
 {
     //rectangle INIT
     m_case.x = posX;
     m_case.y = posY;
-    m_case.width = width;
-    m_case.height = height;
+    m_case.width = side;
+    m_case.height = side;
 }
 
-bool Button::pressed()
+void Checkbox::event()
 {
     //get values
     int x = GetMouseX();
@@ -34,21 +33,20 @@ bool Button::pressed()
     {
         m_down = false;
 
-        return inside;
+        m_status = !m_status;
     }
-
-    return false;
 }
 
-void Button::render()
+bool Checkbox::getStatus()
+{
+    return m_status;
+}
+
+void Checkbox::render()
 {
     //rectangle render
-    if (m_down)
-        DrawRectangleLinesEx(m_case, 2, BLUE);
+    if (m_status)
+        DrawRectangleRec(m_case, BLUE);
     else
         DrawRectangleLinesEx(m_case, 2, BLACK);
-
-    //title render
-    int textWidth = MeasureText(m_title, m_fontSize);
-    DrawText(m_title, m_case.x+(m_case.width/2)-(textWidth/2), m_case.y+(m_case.height/2)-(m_fontSize/2), m_fontSize, BLACK);
 }

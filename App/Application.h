@@ -44,10 +44,17 @@ private:
     Button minus;
 
     Button calculate;
+    Button *change;
+    bool b_change;
     std::string description;
+
+    Checkbox binaryCheckbox;
+    Checkbox gatewayCheckBox;
+    bool binary; 
 
     bool inputError;
     std::string outputS;
+    net *Table;
     net *outputTable;
     const int tableCols;
 };

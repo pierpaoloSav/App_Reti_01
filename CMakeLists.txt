@@ -37,6 +37,8 @@ add_executable(${PROJECT_NAME} App/main.cpp
     Core/TextCase.cpp
     Core/Button.h
     Core/Button.cpp
+    Core/Checkbox.h
+    Core/Checkbox.cpp
     App/Application.h
     App/Application.cpp
     App/functions.h

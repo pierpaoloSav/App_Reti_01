@@ -16,16 +16,24 @@ Application::Application(int screenWidth, int screenHeight, const char* title) :
     nHostsInput(false),
 
     //Buttons
-    plus(470, 110, 20, 20, "+", 10),
-    minus(550, 110, 20, 20, "-", 10),
+    plus(550+50, 110, 20, 20, "+", 10),
+    minus(550+130, 110, 20, 20, "-", 10),
+    change(nullptr),
+    b_change(false),
 
-    calculate(470, 160, 100, 20, "CALCULATE", 15),
+    calculate(550+50, 160, 100, 20, "CALCOLA", 15),
     description(""),
+
+    //Checkboxes
+    binaryCheckbox(550+50, 200, 20),
+    gatewayCheckBox(550+130, 200, 20),
+    binary(false),
 
     inputError(false),
     outputS(""),
+    Table(nullptr),
     outputTable(nullptr),
-    tableCols(7)
+    tableCols(14)
 {
     this->SelectMod();
 }
@@ -63,6 +71,9 @@ Application::~Application()
         nHostCase = nullptr;
     }
 
+    delete[] Table;
+    Table = nullptr;
+
     delete[] outputTable;
     outputTable = nullptr;
 }
@@ -70,7 +81,7 @@ Application::~Application()
 void Application::InitIpCase()
 {
     ipCase = new TextCase(50, 50, 280, 30, 15);
-    ipCase->setTitle("IP 1");
+    ipCase->setTitle("IP");
     std::unordered_set<char> valid = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'};
     ipCase->setValid(valid);
 }
@@ -109,100 +120,10 @@ void Application::InitSubnetToView()
 
 void Application::InitNHostCase()
 {
-    nHostCase = new TextCase(50, 170, 280, 30, 7);
+    nHostCase = new TextCase(50, 230, 280, 30, 7);
     nHostCase->setTitle("Numero di Host");
     std::unordered_set<char> valid = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
     nHostCase->setValid(valid);
-}
-
-void Application::run()
-{
-    while (window.isOpen())
-    {
-        this->Loop();
-        this->Render();
-    }
-}
-
-void Application::Loop()
-{
-    //--------INPUTS--------//
-    if(ipCase && !nHostsInput)
-        ipCase->event();
-    if(ipCase1)
-        ipCase1->event();
-    if(smCase)
-        smCase->event();
-    if(nSubnetCase && !nHostsInput)
-        nSubnetCase->event();
-    if(subnetToView)
-        subnetToView->event();
-    if(nHostCase && nHostsInput)
-        nHostCase->event();
-    bool b_plus = plus.pressed();
-    bool b_minus = minus.pressed();
-    bool b_calculate = calculate.pressed();
-
-    //SELECTOR//
-    if (b_plus && nMod < 4 && !nHostsInput)
-    {
-        nMod++;
-        this->SelectMod();
-    }
-    if (b_minus && nMod > 1 && !nHostsInput)
-    {
-        nMod--;
-        this->SelectMod();
-    }
-        
-    //--------PROCESSING--------//
-    if (b_calculate)
-    {
-        this->Processing();
-    }
-}
-
-void Application::Render()
-{
-    BeginDrawing();
-
-        ClearBackground(WHITE);
-
-        //textcases render
-        if(ipCase)
-            ipCase->render();
-        if(ipCase1)
-            ipCase1->render();
-        if(smCase)
-            smCase->render();
-        if(nSubnetCase)
-            nSubnetCase->render();
-        if(subnetToView)
-            subnetToView->render();
-        if(nHostCase)
-            nHostCase->render();
-
-        //selector render 
-            //title render
-            int xOff = 420;
-            int yOff = 30;
-            DrawText("Selezionare", xOff+100-(MeasureText("Selezionare", 30)/2), yOff, 30, BLUE);
-            DrawText("Modalità", xOff+100-(MeasureText("Modalità", 30)/2), yOff+30, 30, BLUE);
-            //value render
-            std::string buff = std::to_string(nMod);
-            DrawText(buff.c_str(), xOff+90+10-(MeasureText(buff.c_str(), 20)/2), yOff+80, 20, BLACK);
-            //description render
-            DrawText(description.c_str(), xOff+200+100, yOff+30, 20, BLUE);
-            //buttons render
-            plus.render();
-            minus.render();
-                
-        calculate.render();
-
-        //--------OUTPUT--------//
-        Output();
-
-    EndDrawing();
 }
 
 void Application::SelectMod()
@@ -239,6 +160,18 @@ void Application::SelectMod()
         nHostCase = nullptr;
     }
 
+    if(change)
+    {
+        delete change;
+        change = nullptr;
+    }
+
+    if (Table)
+    {
+        delete[] Table;
+        Table = nullptr;
+    }
+
     description = "";
 
     //create new
@@ -266,7 +199,9 @@ void Application::SelectMod()
     case 4:
         InitIpCase();
         InitNSubnetCase();
+        InitSubnetToView();
         InitNHostCase();
+        change = new Button(340, 170, 50, 30, "CHANGE", 10);
         
         description = "\nSUBNETTING VARIABILE\n(VLSM)";
         break;
@@ -335,6 +270,7 @@ void Application::Processing()
     }
 
     //error output
+    if(b_change) inputError = false;
     if(inputError)
     {
         outputS = "Uno o più indirizzi non validi";
@@ -396,8 +332,7 @@ void Application::Processing()
 
         const int nSubnet = atoi(nSubnetS);
 
-        int toView =  atoi(toViewS)-1;
-        if(toView < 0) toView = 0;
+        int toView =  MAX(atoi(toViewS)-1, 0);
 
         //ip error
         if(!isAnIp(ip))
@@ -408,8 +343,14 @@ void Application::Processing()
         }
         
         //process and get output
-        outputTable = new net[tableCols];
-        if(!subnetting(ip, nSubnet, toView, outputTable, tableCols))
+        if (outputTable)
+        {
+            delete[] outputTable;
+            outputTable = nullptr;
+        }
+        outputTable = new net[tableCols-1];
+
+        if(!subnetting(ip, nSubnet, toView, outputTable, tableCols-1, gatewayCheckBox.getStatus()))
         {
             //subnet error
             outputS = "Subnetting non calcolabile";
@@ -423,18 +364,50 @@ void Application::Processing()
     }
     case 4:
     {
+        //not reset at the end
         static bool ip[32];
         static int nSubnet;
+        static int toView = -1;
+
+        //reset at the end
         static std::vector<int> nHosts;
         static int i = 0;
 
         if (!nHostsInput)
         {
+            //-----------------//
+            //toView change
+            if (b_change)
+            {
+                if (nSubnet <= 0) return;
+
+                toView = MAX(atoi(toViewS)-1, 0);
+
+                //reallocate the output
+                delete[] outputTable;
+                outputTable = nullptr;
+                outputTable = new net[tableCols-1];
+                //define the output
+                int diff = nSubnet-toView;
+                if (diff >= tableCols) diff=0;
+                if (diff > 0)
+                    memcpy(outputTable, Table+toView, sizeof(net)*diff);
+                else if (diff == 0)
+                    memcpy(outputTable, Table+toView, sizeof(net)*tableCols);
+
+                return;
+            }
+            //else new subnetting
+            //-----------------//
+
             //conversions
             convertIp(ipS, ip);
 
+            if(atoi(nSubnetS) == 0) goto reset;
             nSubnet = atoi(nSubnetS);
             
+            toView = MAX(atoi(toViewS)-1, 0);
+
             //ip error
             if(!isAnIp(ip))
             {
@@ -442,6 +415,14 @@ void Application::Processing()
                 inputError = true;
                 return;
             }
+
+            //realloc a new Table
+            if (Table)
+            {
+                delete[] Table;
+                Table = nullptr;
+            }
+            Table = new net[nSubnet];
 
             //next phase, getting all nHosts
             nHostsInput = true;
@@ -458,9 +439,6 @@ void Application::Processing()
                     //subnet error
                     outputS = "Una rete non può avere 0 host";
                     inputError = true;
-                    //delete table
-                    delete[] outputTable;
-                    outputTable = nullptr;
                     //go to the end
                     goto reset;
                 }
@@ -470,20 +448,35 @@ void Application::Processing()
             }
 
             //process and get output
-            outputTable = new net[tableCols];           //TODO: da input
-            if(!vlsmSubnetting(ip, nSubnet, nHosts.data(), 5, outputTable, tableCols))
+            if(!vlsmSubnetting(ip, nSubnet, nHosts.data(), Table, gatewayCheckBox.getStatus()))
             {
                 //subnet error
                 outputS = "Subnetting non calcolabile";
                 inputError = true;
+                //go to the end
+                goto reset;
+            }
+
+            //get the outputTable
+            if (outputTable)
+            {
                 delete[] outputTable;
                 outputTable = nullptr;
+            }
+            outputTable = new net[tableCols-1];
+            {
+                //define the output
+                int diff = nSubnet-toView;
+                if (diff >= tableCols) diff=0;
+                if (diff > 0)
+                    memcpy(outputTable, Table+toView, sizeof(net)*diff);
+                else if (diff == 0)
+                    memcpy(outputTable, Table+toView, sizeof(net)*tableCols);
             }
 
             reset:
             //for static variables
             i = 0;
-            nSubnet = 0;
             nHosts.clear();
             nHostsInput = false;
         }
@@ -511,7 +504,7 @@ void Application::Output()
 
             const char* text = outputS.c_str();
             int xOff = window.getWidth()/2;
-            int yOff = 360;
+            int yOff = window.getHeight()/2;
             int textWidth = MeasureText(text, 50);
             DrawText(text, xOff-(textWidth/2), yOff-(50/2), 50, color);
             
@@ -525,7 +518,7 @@ void Application::Output()
             {
                 const char* text = outputS.c_str();
                 int xOff = window.getWidth()/2;
-                int yOff = 360;
+                int yOff = window.getHeight()/2;
                 int textWidth = MeasureText(text, 50);
                 DrawText(text, xOff-(textWidth/2), yOff-(50/2), 50, RED);
                 break;
@@ -533,15 +526,13 @@ void Application::Output()
 
             //SUBNETTING TABLE
             int xOff = 100; //size of number col
-            int yOff = window.getHeight()/2;
+            int yOff = 290;
             int cSize = 20;
-            int col = 160;
+            int vcSize = cSize;
+            int col = 200;
             int row = 30;
-            bool binary = false; //! RISOLVERE SITUAZIONE BINARY
-            if (binary)
-            {
-                cSize = 5;
-            }
+            binary = binaryCheckbox.getStatus();
+            if (binary) vcSize = 5;
 
             //table fields
             DrawText("NET-ID",   xOff         +(col/2-MeasureText("NET-ID", cSize)/2), yOff, cSize, BLACK);
@@ -566,7 +557,7 @@ void Application::Output()
             //values
             if(outputTable)
             {
-                for (int i = 0; i < tableCols; i++)
+                for (int i = 0; i < tableCols-1; i++)
                 {
                     if (!outputTable[i].created)
                         continue;
@@ -576,50 +567,70 @@ void Application::Output()
                     n.append("°");
                     DrawText(n.c_str(), (xOff/2-MeasureText(n.c_str(), cSize)/2), yOff +row +(i*row), cSize, BLACK);
 
-                    char ipS[36] = "";
+                    char ipS[39] = "";
+                    char cidrS[4] = "";
+                    if (!binary) snprintf(cidrS, sizeof(cidrS), "/%d", outputTable[i].m_cidr);
                     int textWidht;
                     
                     if (binary)
                         convertIpBinaryString(outputTable[i].netId, ipS);
                     else
+                    {
                         convertIpString(outputTable[i].netId, ipS);
-                    textWidht = MeasureText(ipS, cSize);
-                    DrawText(ipS, xOff        +(col/2-textWidht/2), yOff +row +(i*row), cSize, BLACK);
+                        strcat(ipS, cidrS);
+                    }
+                    textWidht = MeasureText(ipS, vcSize);
+                    DrawText(ipS, xOff        +(col/2-textWidht/2), yOff +row +(i*row), vcSize, BLACK);
                     
                     if (binary)
                         convertIpBinaryString(outputTable[i].h1, ipS);
                     else
+                    {
                         convertIpString(outputTable[i].h1, ipS);
-                    textWidht = MeasureText(ipS, cSize);
-                    DrawText(ipS, xOff +col   +(col/2-textWidht/2), yOff +row +(i*row), cSize, BLACK);
+                        strcat(ipS, cidrS);
+                    }
+                    textWidht = MeasureText(ipS, vcSize);
+                    DrawText(ipS, xOff +col   +(col/2-textWidht/2), yOff +row +(i*row), vcSize, BLACK);
 
                     if (binary)
                         convertIpBinaryString(outputTable[i].h2, ipS);
                     else
+                    {
                         convertIpString(outputTable[i].h2, ipS);
-                    textWidht = MeasureText(ipS, cSize);
-                    DrawText(ipS, xOff +col*2 +(col/2-textWidht/2), yOff +row +(i*row), cSize, BLACK);
+                        strcat(ipS, cidrS);
+                    }
+                    textWidht = MeasureText(ipS, vcSize);
+                    DrawText(ipS, xOff +col*2 +(col/2-textWidht/2), yOff +row +(i*row), vcSize, BLACK);
 
-                    if (binary)
-                        convertIpBinaryString(outputTable[i].gateway, ipS);
-                    else
-                        convertIpString(outputTable[i].gateway, ipS);
-                    textWidht = MeasureText(ipS, cSize);
-                    DrawText(ipS, xOff +col*3 +(col/2-textWidht/2), yOff +row +(i*row), cSize, BLACK);
+                    if (outputTable[i].m_bGat)
+                    {
+                        if (binary)
+                            convertIpBinaryString(outputTable[i].gateway, ipS);
+                        else
+                        {
+                            convertIpString(outputTable[i].gateway, ipS);
+                            strcat(ipS, cidrS);
+                        }
+                        textWidht = MeasureText(ipS, vcSize);
+                        DrawText(ipS, xOff +col*3 +(col/2-textWidht/2), yOff +row +(i*row), vcSize, BLACK);
+                    }
 
                     if (binary)
                         convertIpBinaryString(outputTable[i].broadcast, ipS);
                     else
+                    {
                         convertIpString(outputTable[i].broadcast, ipS);
-                    textWidht = MeasureText(ipS, cSize);
-                    DrawText(ipS, xOff +col*4 +(col/2-textWidht/2), yOff +row +(i*row), cSize, BLACK);
+                        strcat(ipS, cidrS);
+                    }
+                    textWidht = MeasureText(ipS, vcSize);
+                    DrawText(ipS, xOff +col*4 +(col/2-textWidht/2), yOff +row +(i*row), vcSize, BLACK);
 
                     if (binary)
                         convertIpBinaryString(outputTable[i].sm, ipS);
                     else
                         convertIpString(outputTable[i].sm, ipS);
-                    textWidht = MeasureText(ipS, cSize);
-                    DrawText(ipS, xOff +col*5 +(col/2-textWidht/2), yOff +row +(i*row), cSize, BLACK);
+                    textWidht = MeasureText(ipS, vcSize);
+                    DrawText(ipS, xOff +col*5 +(col/2-textWidht/2), yOff +row +(i*row), vcSize, BLACK);
                 }
             }
 
@@ -631,4 +642,129 @@ void Application::Output()
             break;
         }
     }
+}
+
+void Application::run()
+{
+    while (window.isOpen())
+    {
+        this->Loop();
+        this->Render();
+    }
+}
+
+void Application::Loop()
+{
+    //--------INPUTS--------//
+    bool b_plus = false;
+    bool b_minus = false;
+    bool b_calculate = calculate.pressed() || IsKeyPressed(KEY_ENTER);
+
+    if(nHostCase && nHostsInput)
+        nHostCase->event();
+    else
+    {
+        if(ipCase) ipCase->event();
+        if(ipCase1) ipCase1->event();
+        if(smCase) smCase->event();
+        if(nSubnetCase) nSubnetCase->event();
+        if(subnetToView) subnetToView->event();
+
+        b_plus = plus.pressed();
+        b_minus = minus.pressed();
+        if(change) b_change = change->pressed();
+        binaryCheckbox.event();
+        gatewayCheckBox.event();
+    }
+
+    //SELECTOR//
+    if (b_plus && nMod < 4)
+    {
+        nMod++;
+        this->SelectMod();
+    }
+    if (b_minus && nMod > 1)
+    {
+        nMod--;
+        this->SelectMod();
+    }
+        
+    //--------PROCESSING--------//
+    if(b_change)
+    {
+        this->Processing();
+        b_change = false;
+    }
+    if (b_calculate)
+    {
+        this->Processing();
+
+        static bool old = false;
+        if (old != nHostsInput)
+        {
+            if(ipCase) ipCase->unSelect();
+            if(ipCase1) ipCase1->unSelect();
+            if(smCase) smCase->unSelect();
+            if(nSubnetCase) nSubnetCase->unSelect();
+            if(subnetToView) subnetToView->unSelect();
+            if(nHostCase) nHostCase->unSelect();
+        }
+        old = nHostsInput;
+    }
+}
+
+void Application::Render()
+{
+    BeginDrawing();
+
+        ClearBackground(WHITE);
+
+        //textcases render
+        if(ipCase)
+            ipCase->render();
+        if(ipCase1)
+            ipCase1->render();
+        if(smCase)
+            smCase->render();
+        if(nSubnetCase)
+            nSubnetCase->render();
+        if(subnetToView)
+            subnetToView->render();
+        if(nHostCase)
+            nHostCase->render();
+
+        //selector render 
+            //title render
+            int xOff = window.getWidth()/2;
+            int yOff = 30;
+            std::string buff;
+            DrawText("Selezionare", xOff-(MeasureText("Selezionare", 30)/2), yOff, 30, BLUE);
+            DrawText("Modalità", xOff-(MeasureText("Modalità", 30)/2), yOff+30, 30, BLUE);
+            //value render
+            buff = std::to_string(nMod);
+            DrawText(buff.c_str(), xOff-(MeasureText(buff.c_str(), 20)/2), yOff+80, 20, BLACK);
+            //Buttons render
+            plus.render();
+            minus.render();
+            calculate.render();
+
+        if(change)
+            change->render();
+        
+        //description render
+        DrawText(description.c_str(), xOff+200+100, yOff+30, 20, BLUE);
+            
+        //instruction for nHosts input
+        buff = "Inserisci numero di host";
+        if(nHostsInput)
+            DrawText(buff.c_str(), xOff+200+100, yOff+120, 20, BLUE);
+        
+        //Checkboxes render
+        binaryCheckbox.render();
+        gatewayCheckBox.render();
+
+        //--------OUTPUT--------//
+        Output();
+
+    EndDrawing();
 }
