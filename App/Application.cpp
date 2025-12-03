@@ -394,7 +394,7 @@ void Application::Processing()
                 outputTable = new net[tableCols-1];
                 //define the output
                 int diff = nSubnet-toView;
-                if (diff >= tableCols) diff=0;
+                if (diff >= tableCols-1) diff=0;
                 if (diff > 0)
                     memcpy(outputTable, Table+toView, sizeof(net)*diff);
                 else if (diff == 0)
@@ -472,11 +472,11 @@ void Application::Processing()
             {
                 //define the output
                 int diff = nSubnet-toView;
-                if (diff >= tableCols) diff=0;
+                if (diff >= tableCols-1) diff=0;
                 if (diff > 0)
                     memcpy(outputTable, Table+toView, sizeof(net)*diff);
                 else if (diff == 0)
-                    memcpy(outputTable, Table+toView, sizeof(net)*tableCols);
+                    memcpy(outputTable, Table+toView, sizeof(net)*(tableCols-1));
             }
 
             reset:
