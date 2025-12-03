@@ -91,7 +91,7 @@ void convertIp(char *ipS, bool ip[32])
 
     //conversion in decimal
     char octet[5] = "";
-    u_int8_t ipN[4];
+    uint8_t ipN[4];
     int t = 0;
     int d = 0;
 
@@ -135,7 +135,7 @@ void convertIpString(bool ip[32], char *ipS)
     //THE ADDRES HAS TO BE VALID
 
     //conversion from binary
-    u_int8_t ipN[4];
+    uint8_t ipN[4];
     for (int i = 0; i < 4; i++)
     {
         int n = 0;

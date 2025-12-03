@@ -1,6 +1,7 @@
 #include "Checkbox.h"
 
-Checkbox::Checkbox(float posX, float posY, int side) :
+Checkbox::Checkbox(float posX, float posY, int side, const char* title) :
+    m_title(title),
     m_status(false),
     m_down(false)
 {
@@ -49,4 +50,8 @@ void Checkbox::render()
         DrawRectangleRec(m_case, BLUE);
     else
         DrawRectangleLinesEx(m_case, 2, BLACK);
+
+    //title render
+    int textWidth = MeasureText(m_title, m_case.height);
+    DrawText(m_title, m_case.x+(m_case.width/2)-(textWidth/2), m_case.y+m_case.height, m_case.height, BLACK);
 }

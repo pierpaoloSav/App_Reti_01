@@ -18,7 +18,7 @@ struct net
     int m_cidr = 0;
     int m_nSubnet = 0;
     
-    void create(bool id[32], u_int8_t netBit, int nSubnet, bool bGat)
+    void create(bool id[32], uint8_t netBit, int nSubnet, bool bGat)
     { 
         m_bGat = bGat;
         m_nSubnet = nSubnet;

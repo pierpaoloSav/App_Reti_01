@@ -25,8 +25,8 @@ Application::Application(int screenWidth, int screenHeight, const char* title) :
     description(""),
 
     //Checkboxes
-    binaryCheckbox(550+50, 200, 20),
-    gatewayCheckBox(550+130, 200, 20),
+    binaryCheckbox(550+50, 200, 20, "01"),
+    gatewayCheckBox(550+130, 200, 20, "gateway"),
     binary(false),
 
     inputError(false),
@@ -274,6 +274,11 @@ void Application::Processing()
     if(inputError)
     {
         outputS = "Uno o più indirizzi non validi";
+        if (outputTable)
+        {
+            delete[] outputTable;
+            outputTable = nullptr;
+        }
         return;
     }
 
@@ -393,7 +398,7 @@ void Application::Processing()
                 if (diff > 0)
                     memcpy(outputTable, Table+toView, sizeof(net)*diff);
                 else if (diff == 0)
-                    memcpy(outputTable, Table+toView, sizeof(net)*tableCols);
+                    memcpy(outputTable, Table+toView, sizeof(net)*(tableCols-1));
 
                 return;
             }
@@ -413,7 +418,7 @@ void Application::Processing()
             {
                 outputS = "IP superiore alla classe c";
                 inputError = true;
-                return;
+                goto reset;
             }
 
             //realloc a new Table
@@ -479,6 +484,11 @@ void Application::Processing()
             i = 0;
             nHosts.clear();
             nHostsInput = false;
+            if (inputError && outputTable)
+            {
+                delete[] outputTable;
+                outputTable = nullptr;
+            }
         }
 
         break;
