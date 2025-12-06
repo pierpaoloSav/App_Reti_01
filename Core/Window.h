@@ -11,6 +11,7 @@ public:
     int getWidth();
     int getHeight();
     bool isOpen();
+    
 private:
     int m_width;
     int m_height;

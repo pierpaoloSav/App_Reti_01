@@ -16,13 +16,14 @@ private:
     void Loop();
     void Render();
 
+    //textcases inits
     void InitIpCase();
     void InitIpCase1();
     void InitSmCase();
     void InitNSubnetCase();
     void InitSubnetToView();
     void InitNHostCase();
-
+    
     void SelectMod();
     void Processing();
     void Output();

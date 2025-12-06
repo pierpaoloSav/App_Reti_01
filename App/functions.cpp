@@ -132,8 +132,6 @@ void convertIp(char *ipS, bool ip[32])
 
 void convertIpString(bool ip[32], char *ipS)
 {
-    //THE ADDRES HAS TO BE VALID
-
     //conversion from binary
     uint8_t ipN[4];
     for (int i = 0; i < 4; i++)
@@ -180,6 +178,7 @@ void convertIpBinaryString(bool ip[32], char *ipS)
 
 void binarySum(bool ip[32], bool ip1[32])
 {
+    //simple sum of the ip1 in the ip
     bool carry = 0;
     for (int i = 31; i >= 0; i--)
     {
@@ -192,6 +191,7 @@ void binarySum(bool ip[32], bool ip1[32])
 
 void bubbleSortDesc(int arr[], int n)
 {
+    //bubble sort in decreasing order
     for (int i = 0; i < n - 1; i++)
     {
         bool swapped = false;

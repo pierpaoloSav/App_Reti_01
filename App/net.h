@@ -4,6 +4,13 @@
 #include "functions.h"
 void binarySum(bool ip[32], bool ip1[32]); //forward declaration
 
+/*
+Semplice struttura che racchiude tutte le
+informazioni di una rete
+Dato il Net-ID e alcune informazioni tutte
+le altre vengono calcolate dalla funzione create
+*/
+
 struct net
 {
     bool netId[32];
@@ -17,12 +24,14 @@ struct net
     bool m_bGat;
     int m_cidr = 0;
     int m_nSubnet = 0;
+    int m_nHost = 0;
     
-    void create(bool id[32], uint8_t netBit, int nSubnet, bool bGat)
+    void create(bool id[32], uint8_t netBit, int nSubnet, int nHost, bool bGat)
     { 
-        m_bGat = bGat;
-        m_nSubnet = nSubnet;
         m_cidr = netBit;
+        m_nSubnet = nSubnet;
+        m_nHost = nHost;
+        m_bGat = bGat;
 
         memcpy(netId, id, sizeof(bool)*32); 
 

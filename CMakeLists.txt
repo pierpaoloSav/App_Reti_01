@@ -24,6 +24,7 @@ endif()
 
 #MY_DIRS
 include_directories(App)
+include_directories(App/Application)
 include_directories(Core)
 
 # We don't want raylib's examples built. This option is picked up by raylib's CMakeLists.txt
@@ -39,14 +40,17 @@ add_executable(${PROJECT_NAME} App/main.cpp
     Core/Button.cpp
     Core/Checkbox.h
     Core/Checkbox.cpp
-    App/Application.h
-    App/Application.cpp
+    Core/headers.h
+    App/Application/Application.h
+    App/Application/Application.cpp
+    App/Application/ApplicationInits.cpp
+    App/Application/ApplicationProcessing.cpp
+    App/Application/ApplicationRender.cpp
     App/functions.h
     App/functions.cpp
     App/features.h
     App/features.cpp
     App/net.h
-    App/headers.h
 )
 
 # Link raylib to project

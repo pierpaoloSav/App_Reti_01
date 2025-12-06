@@ -2,6 +2,11 @@
 
 #include "headers.h"
 
+/*
+Funzioni necessarie per controllo, conversione
+o altre operazioni sugli indirizzi IP
+*/
+
 bool inputIpValid(char *ip);
 
 bool isAnIp(bool ip[32]);

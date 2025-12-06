@@ -64,8 +64,10 @@ bool subnetting(bool ip[32], int nSubnets, int subnetRequired, net* table, int n
     const int nBit = ceil(log2(nSubnets));
     int s = ((int)findClass(ip)-96) * 8;
     int e = s+nBit -1;
-    if (e > 29 || !isNetId(ip, s))
-        return false; //? classless o classfull solo
+    
+    //check if doable (cidr<=29 and no 1 in the host-ID)
+    if (e > 29 || !isNetId(ip, s)) //? e>29?
+        return false;
 
     int k = subnetRequired;
     for (int i = 0; i < nEffSubnets && k < nSubnets; i++)
@@ -85,7 +87,7 @@ bool subnetting(bool ip[32], int nSubnets, int subnetRequired, net* table, int n
         memcpy(netId+s, subId, sizeof(bool)*nBit);
         
         //add in the table
-        table[i].create(netId, e+1, k, gateway);
+        table[i].create(netId, e+1, k, pow(2, 32-(e+1))-(2-gateway), gateway);
     }
 
     return true;
@@ -94,7 +96,7 @@ bool subnetting(bool ip[32], int nSubnets, int subnetRequired, net* table, int n
 bool vlsmSubnetting(bool ip[32], int nSubnets, int *nHosts, net *table, bool gateway)
 {
     //get the class
-    int cidr = ((int)findClass(ip)-96) * 8; //? classless o classfull solo
+    int cidr = ((int)findClass(ip)-96) * 8;
 
     //sort hosts
     int sortedHosts[nSubnets];
@@ -107,7 +109,7 @@ bool vlsmSubnetting(bool ip[32], int nSubnets, int *nHosts, net *table, bool gat
     {
         //get current cidr
         int cCidr = 32 - log2(sortedHosts[i]+(2+(int)gateway));
-        if (cCidr <= cidr)
+        if (cCidr <= cidr) //first doability condition
             return false;
 
         //add the subnet in the input order
@@ -127,10 +129,10 @@ bool vlsmSubnetting(bool ip[32], int nSubnets, int *nHosts, net *table, bool gat
                     k--;
                 }
 
-                table[k+1].create(netId, cCidr, (n+1), gateway);
+                table[k+1].create(netId, cCidr, (n+1), sortedHosts[i], gateway);
             }
             else
-                table[i].create(netId, cCidr, (n+1), gateway);
+                table[i].create(netId, cCidr, (n+1), sortedHosts[i], gateway);
 
         //save the old netId for control
         bool oldNetId[32];
@@ -141,7 +143,7 @@ bool vlsmSubnetting(bool ip[32], int nSubnets, int *nHosts, net *table, bool gat
         toSum[cCidr-1] = 1;
         binarySum(netId, toSum);
 
-        //subnet error if the sum modified the original netId
+        //second doability condition: if the sum modified the original netId
         for (int j = 0; j < cidr; j++) 
         {
             if (netId[j] != oldNetId[j])

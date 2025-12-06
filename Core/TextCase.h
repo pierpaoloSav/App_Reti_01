@@ -3,7 +3,6 @@
 #include <raylib.h>
 #include <string.h>
 #include <unordered_set>
-#include <iostream>
 
 /*
 Classe che permette la creazione di semplici caselle di testo:
