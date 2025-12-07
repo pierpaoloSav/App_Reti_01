@@ -2,6 +2,7 @@
 
 #include <raylib.h>
 #include <string.h>
+#include <string>
 #include <unordered_set>
 
 /*
